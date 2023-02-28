@@ -635,7 +635,7 @@
   "@ytDownQuality": {},
   "ytDownQualitySub": "Hogere kwaliteit neemt meer ruimte in beslag",
   "@ytDownQualitySub": {},
-  "ytLiveAlert": "Deze video wordt gelivestreamed. Wacht tot de livestream is afgelopen en probeer het opnieuw.",
+  "ytLiveAlert": "Deze video wordt gelivestreamd of er is een fout opgetreden. Wacht tot de livestream is afgelopen of probeer het opnieuw.",
   "@ytLiveAlert": {},
   "ytStreamQuality": "YouTube-streamingkwaliteit",
   "@ytStreamQuality": {},
@@ -678,5 +678,11 @@
   "shareLogsSub": "Deel de logboeken van de huidige sessies",
   "@shareLogsSub": {},
   "radio": "Radio",
-  "@radio": {}
+  "@radio": {},
+  "cantFind": "Kun je niet vinden wat je zoekt? ",
+  "@cantFind": {},
+  "showTopCharts": "Toplijsten tonen",
+  "@showTopCharts": {},
+  "showTopChartsSub": "Toon Spotify-toplijsten op het startscherm",
+  "@showTopChartsSub": {}
 }

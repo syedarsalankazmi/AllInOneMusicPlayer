@@ -29,6 +29,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:hive/hive.dart';
 
+import '../../Services/yt_music.dart';
+
 bool status = false;
 List searchedList = Hive.box('cache').get('ytHome', defaultValue: []) as List;
 List headList = Hive.box('cache').get('ytHomeHead', defaultValue: []) as List;
@@ -138,7 +140,7 @@ class _YouTubeState extends State<YouTube>
                 ),
               ),
         onQueryChanged: (changedQuery) {
-          return YouTubeServices().getSearchSuggestions(query: changedQuery);
+          return YtMusicService().getSearchSuggestions(query: changedQuery);
         },
         onSubmitted: (submittedQuery) {
           Navigator.push(
@@ -275,16 +277,16 @@ class _YouTubeState extends State<YouTube>
                                                     YouTubePlaylist(
                                                   playlistId: item['playlistId']
                                                       .toString(),
-                                                  playlistImage:
-                                                      item['imageStandard']
-                                                          .toString(),
-                                                  playlistName:
-                                                      item['title'].toString(),
-                                                  playlistSubtitle:
-                                                      '${item['count'].toString()} Songs',
-                                                  playlistSecondarySubtitle:
-                                                      item['description']
-                                                          ?.toString(),
+                                                  // playlistImage:
+                                                  //     item['imageStandard']
+                                                  //         .toString(),
+                                                  // playlistName:
+                                                  //     item['title'].toString(),
+                                                  // playlistSubtitle:
+                                                  //     '${item['count']} Songs',
+                                                  // playlistSecondarySubtitle:
+                                                  //     item['description']
+                                                  //         ?.toString(),
                                                 ),
                                               ),
                                             );
@@ -297,44 +299,97 @@ class _YouTubeState extends State<YouTube>
                                         child: Column(
                                           children: [
                                             Expanded(
-                                              child: Card(
-                                                elevation: 5,
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                    10.0,
+                                              child: Stack(
+                                                children: [
+                                                  Positioned.fill(
+                                                    child: Card(
+                                                      elevation: 5,
+                                                      shape:
+                                                          RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(
+                                                          10.0,
+                                                        ),
+                                                      ),
+                                                      clipBehavior:
+                                                          Clip.antiAlias,
+                                                      child: CachedNetworkImage(
+                                                        fit: BoxFit.cover,
+                                                        errorWidget:
+                                                            (context, _, __) =>
+                                                                Image(
+                                                          fit: BoxFit.cover,
+                                                          image: item['type'] !=
+                                                                  'playlist'
+                                                              ? const AssetImage(
+                                                                  'assets/ytCover.png',
+                                                                )
+                                                              : const AssetImage(
+                                                                  'assets/cover.jpg',
+                                                                ),
+                                                        ),
+                                                        imageUrl: item['image']
+                                                            .toString(),
+                                                        placeholder:
+                                                            (context, url) =>
+                                                                Image(
+                                                          fit: BoxFit.cover,
+                                                          image: item['type'] !=
+                                                                  'playlist'
+                                                              ? const AssetImage(
+                                                                  'assets/ytCover.png',
+                                                                )
+                                                              : const AssetImage(
+                                                                  'assets/cover.jpg',
+                                                                ),
+                                                        ),
+                                                      ),
+                                                    ),
                                                   ),
-                                                ),
-                                                clipBehavior: Clip.antiAlias,
-                                                child: CachedNetworkImage(
-                                                  fit: BoxFit.cover,
-                                                  errorWidget:
-                                                      (context, _, __) => Image(
-                                                    fit: BoxFit.cover,
-                                                    image: item['type'] !=
-                                                            'playlist'
-                                                        ? const AssetImage(
-                                                            'assets/ytCover.png',
-                                                          )
-                                                        : const AssetImage(
-                                                            'assets/cover.jpg',
-                                                          ),
-                                                  ),
-                                                  imageUrl:
-                                                      item['image'].toString(),
-                                                  placeholder: (context, url) =>
-                                                      Image(
-                                                    fit: BoxFit.cover,
-                                                    image: item['type'] !=
-                                                            'playlist'
-                                                        ? const AssetImage(
-                                                            'assets/ytCover.png',
-                                                          )
-                                                        : const AssetImage(
-                                                            'assets/cover.jpg',
-                                                          ),
-                                                  ),
-                                                ),
+                                                  if (item['type'] == 'chart')
+                                                    Align(
+                                                      alignment:
+                                                          Alignment.centerRight,
+                                                      child: Container(
+                                                        color: Colors.black
+                                                            .withOpacity(0.75),
+                                                        width: (boxSize - 30) *
+                                                            (16 / 9) /
+                                                            2.5,
+                                                        child: Column(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .center,
+                                                          children: [
+                                                            Text(
+                                                              item['count']
+                                                                  .toString(),
+                                                              style:
+                                                                  const TextStyle(
+                                                                fontSize: 20,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
+                                                            ),
+                                                            const IconButton(
+                                                              onPressed: null,
+                                                              color:
+                                                                  Colors.white,
+                                                              disabledColor:
+                                                                  Colors.white,
+                                                              icon: Icon(
+                                                                Icons
+                                                                    .playlist_play_rounded,
+                                                                size: 40,
+                                                              ),
+                                                            )
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                ],
                                               ),
                                             ),
                                             Padding(
@@ -361,7 +416,7 @@ class _YouTubeState extends State<YouTube>
                                                       fontSize: 11,
                                                       color: Theme.of(context)
                                                           .textTheme
-                                                          .caption!
+                                                          .bodySmall!
                                                           .color,
                                                     ),
                                                   ),

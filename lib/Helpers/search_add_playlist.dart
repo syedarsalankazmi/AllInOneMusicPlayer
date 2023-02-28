@@ -95,7 +95,7 @@ class SearchAddPlaylist {
             Uri.parse(response.headers['location'].toString());
         baseClient.close();
         final RegExpMatch? id2 =
-            RegExp(r'.*?id\=(.*)&').firstMatch('${redirectUri.toString()}&');
+            RegExp(r'.*?id\=(.*)&').firstMatch('$redirectUri&');
         if (id2 != null) {
           final List tracks = await getRessoSongs(playlistId: id2[1]!);
           return {
@@ -182,7 +182,6 @@ class SearchAddPlaylist {
             await SaavnAPI().fetchTopSearchResult('$trackName by $artistName');
         addMapToPlaylist(playName, result[0] as Map);
       } catch (e) {
-        // print('Error in $_done: $e');
         Logger.root.severe('Error in $done: $e');
       }
     }
@@ -209,7 +208,6 @@ class SearchAddPlaylist {
             await SaavnAPI().fetchTopSearchResult('$trackName by $artistName');
         addMapToPlaylist(playName, result[0] as Map);
       } catch (e) {
-        // print('Error in $_done: $e');
         Logger.root.severe('Error in $done: $e');
       }
     }

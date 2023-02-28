@@ -20,6 +20,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:http/http.dart';
 import 'package:logging/logging.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
@@ -41,6 +42,55 @@ class YouTubeServices {
   Future<List<Video>> getPlaylistSongs(String id) async {
     final List<Video> results = await yt.playlists.getVideos(id).toList();
     return results;
+  }
+
+  Future<Video?> getVideoFromId(String id) async {
+    try {
+      final Video result = await yt.videos.get(id);
+      return result;
+    } catch (e) {
+      Logger.root.severe('Error while getting video from id', e);
+      return null;
+    }
+  }
+
+  Future<Map?> formatVideoFromId({
+    required String id,
+    Map? data,
+    bool? getUrl,
+  }) async {
+    final Video? vid = await getVideoFromId(id);
+    if (vid == null) {
+      return null;
+    }
+    final Map? response = await formatVideo(
+      video: vid,
+      quality: Hive.box('settings')
+          .get(
+            'ytQuality',
+            defaultValue: 'Low',
+          )
+          .toString(),
+      data: data,
+      getUrl: getUrl ?? true,
+      // preferM4a: Hive.box(
+      //         'settings')
+      //     .get('preferM4a',
+      //         defaultValue:
+      //             true) as bool
+    );
+    return response;
+  }
+
+  Future<Map?> refreshLink(String id) async {
+    final Video? res = await getVideoFromId(id);
+    if (res == null) {
+      return null;
+    }
+    final String quality =
+        Hive.box('settings').get('quality', defaultValue: 'Low').toString();
+    final Map? data = await formatVideo(video: res, quality: quality);
+    return data;
   }
 
   Future<Playlist> getPlaylistDetails(String id) async {
@@ -75,28 +125,41 @@ class YouTubeServices {
       }).toList();
 
       final List finalResult = shelfRenderer.map((element) {
-        if (element['title']['runs'][0]['text'].trim() !=
-            'Highlights from Global Citizen Live') {
-          return {
-            'title': element['title']['runs'][0]['text'],
-            'playlists': element['title']['runs'][0]['text'].trim() == 'Charts'
-                ? formatChartItems(
+        final playlistItems = element['title']['runs'][0]['text'].trim() ==
+                    'Charts' ||
+                element['title']['runs'][0]['text'].trim() == 'Classements'
+            ? formatChartItems(
+                element['content']['horizontalListRenderer']['items'] as List,
+              )
+            : element['title']['runs'][0]['text']
+                        .toString()
+                        .contains('Music Videos') ||
+                    element['title']['runs'][0]['text']
+                        .toString()
+                        .contains('Nouveaux clips') ||
+                    element['title']['runs'][0]['text']
+                        .toString()
+                        .contains('En Musique Avec Moi') ||
+                    element['title']['runs'][0]['text']
+                        .toString()
+                        .contains('Performances Uniques')
+                ? formatVideoItems(
                     element['content']['horizontalListRenderer']['items']
                         as List,
                   )
-                : element['title']['runs'][0]['text']
-                        .toString()
-                        .contains('Music Videos')
-                    ? formatVideoItems(
-                        element['content']['horizontalListRenderer']['items']
-                            as List,
-                      )
-                    : formatItems(
-                        element['content']['horizontalListRenderer']['items']
-                            as List,
-                      ),
+                : formatItems(
+                    element['content']['horizontalListRenderer']['items']
+                        as List,
+                  );
+        if (playlistItems.isNotEmpty) {
+          return {
+            'title': element['title']['runs'][0]['text'],
+            'playlists': playlistItems,
           };
         } else {
+          Logger.root.severe(
+            "got null in getMusicHome for '${element['title']['runs'][0]['text']}'",
+          );
           return null;
         }
       }).toList();
@@ -270,21 +333,27 @@ class YouTubeServices {
   Future<Map?> formatVideo({
     required Video video,
     required String quality,
+    Map? data,
+    bool getUrl = true,
     // bool preferM4a = true,
   }) async {
     if (video.duration?.inSeconds == null) return null;
-    final List<String> urls = await getUri(video);
-    final String finalUrl = quality == 'High' ? urls.last : urls.first;
-    final String expireAt = RegExp('expire=(.*?)&')
-            .firstMatch(finalUrl)!
-            .group(1) ??
-        (DateTime.now().millisecondsSinceEpoch ~/ 1000 + 3600 * 5.5).toString();
+    List<String> urls = [];
+    String finalUrl = '';
+    String expireAt = '0';
+    if (getUrl) {
+      urls = await getUri(video);
+      finalUrl = quality == 'High' ? urls.last : urls.first;
+      expireAt = RegExp('expire=(.*?)&').firstMatch(finalUrl)!.group(1) ??
+          (DateTime.now().millisecondsSinceEpoch ~/ 1000 + 3600 * 5.5)
+              .toString();
+    }
     return {
       'id': video.id.value,
-      'album': video.author,
+      'album': (data?['album'] ?? '') != '' ? data!['album'] : video.author,
       'duration': video.duration?.inSeconds.toString(),
-      'title': video.title,
-      'artist': video.author,
+      'title': (data?['title'] ?? '') != '' ? data!['title'] : video.title,
+      'artist': (data?['artist'] ?? '') != '' ? data!['artist'] : video.author,
       'image': video.thumbnails.maxResUrl,
       'secondImage': video.thumbnails.highResUrl,
       'language': 'YouTube',
@@ -298,7 +367,8 @@ class YouTubeServices {
       'has_lyrics': 'false',
       'release_date': video.publishDate.toString(),
       'album_id': video.channelId.value,
-      'subtitle': video.author,
+      'subtitle':
+          (data?['subtitle'] ?? '') != '' ? data!['subtitle'] : video.author,
       'perma_url': video.url,
     };
     // For invidous
@@ -347,7 +417,7 @@ class YouTubeServices {
   }
 
   Future<List<Video>> fetchSearchResults(String query) async {
-    final List<Video> searchResults = await yt.search.getVideos(query);
+    final List<Video> searchResults = await yt.search.search(query);
 
     // Uri link = Uri.https(searchAuthority, searchPath, {"search_query": query});
     // final Response response = await get(link);

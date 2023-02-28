@@ -623,7 +623,7 @@
   "@stopOnClose": {},
   "stopDown": "עצירת ההורדה",
   "@stopDown": {},
-  "ytLiveAlert": "הווידאו בשידור חי. נא להמתין לסיום השידור החי ולנסות שוב.",
+  "ytLiveAlert": "או שהווידאו בשידור חי או שקרתה איזו תקלה. נא להמתין לסיום השידור החי או לנסות שוב.",
   "@ytLiveAlert": {},
   "sleepTimer": "מתזמן שינה",
   "@sleepTimer": {},
@@ -662,5 +662,15 @@
   "shareLogsSub": "שיתוף יומני הפעילות הנוכחית",
   "@shareLogsSub": {},
   "radio": "רדיו",
-  "@radio": {}
+  "@radio": {},
+  "aboard": "ממריאים",
+  "@aboard": {},
+  "cantFind": "לא מצאת את מבוקשך? ",
+  "@cantFind": {},
+  "supportEq": "תמיכה באקוולייזר",
+  "@supportEq": {},
+  "showTopCharts": "הצגת טבלת המובילים",
+  "@showTopCharts": {},
+  "showTopChartsSub": "להציג את טבלאות המובילים של Spotify במסך הבית",
+  "@showTopChartsSub": {}
 }

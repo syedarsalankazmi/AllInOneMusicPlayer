@@ -27,22 +27,26 @@ import 'package:all_in_one_music_player/Services/youtube_services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:hive/hive.dart';
-import 'package:youtube_explode_dart/youtube_explode_dart.dart';
+import 'package:logging/logging.dart';
+
+import '../../CustomWidgets/playlist_popupmenu.dart';
+import '../../Services/yt_music.dart';
 
 class YouTubePlaylist extends StatefulWidget {
   final String playlistId;
-  final String playlistName;
-  final String? playlistSubtitle;
-  final String? playlistSecondarySubtitle;
-  final String playlistImage;
+  final String type;
+  // final String playlistName;
+  // final String? playlistSubtitle;
+  // final String? playlistSecondarySubtitle;
+  // final String playlistImage;
   const YouTubePlaylist({
     super.key,
     required this.playlistId,
-    required this.playlistName,
-    required this.playlistSubtitle,
-    required this.playlistSecondarySubtitle,
-    required this.playlistImage,
+    this.type = 'playlist',
+    // required this.playlistName,
+    // required this.playlistSubtitle,
+    // required this.playlistSecondarySubtitle,
+    // required this.playlistImage,
   });
 
   @override
@@ -51,27 +55,78 @@ class YouTubePlaylist extends StatefulWidget {
 
 class _YouTubePlaylistState extends State<YouTubePlaylist> {
   bool status = false;
-  List<Video> searchedList = [];
+  List<Map> searchedList = [];
   bool fetched = false;
   bool done = true;
-  List ytSearch =
-      Hive.box('settings').get('ytSearch', defaultValue: []) as List;
   final ScrollController _scrollController = ScrollController();
+  String playlistName = '';
+  String playlistSubtitle = '';
+  String? playlistSecondarySubtitle;
+  String playlistImage = '';
 
   @override
   void initState() {
     if (!status) {
       status = true;
-      YouTubeServices().getPlaylistSongs(widget.playlistId).then((value) {
-        if (value.isNotEmpty) {
+      if (widget.type == 'playlist') {
+        YtMusicService().getPlaylistDetails(widget.playlistId).then((value) {
           setState(() {
-            searchedList = value;
-            fetched = true;
+            try {
+              searchedList = value['songs'] as List<Map>? ?? [];
+              playlistName = value['name'] as String? ?? '';
+              playlistSubtitle = value['subtitle'] as String? ?? '';
+              playlistSecondarySubtitle = value['description'] as String?;
+              playlistImage = (value['images'] as List?)?.last as String? ?? '';
+              fetched = true;
+            } catch (e) {
+              Logger.root.severe('Error in fetching playlist details', e);
+              fetched = true;
+            }
           });
-        } else {
-          status = false;
-        }
-      });
+        });
+      } else if (widget.type == 'album') {
+        YtMusicService().getAlbumDetails(widget.playlistId).then((value) {
+          setState(() {
+            try {
+              searchedList = value['songs'] as List<Map>? ?? [];
+              playlistName = value['name'] as String? ?? '';
+              playlistSubtitle = value['subtitle'] as String? ?? '';
+              playlistSecondarySubtitle = value['description'] as String?;
+              playlistImage = (value['images'] as List?)?.last as String? ?? '';
+              fetched = true;
+            } catch (e) {
+              Logger.root.severe('Error in fetching playlist details', e);
+              fetched = true;
+            }
+          });
+        });
+      } else if (widget.type == 'artist') {
+        YtMusicService().getArtistDetails(widget.playlistId).then((value) {
+          setState(() {
+            try {
+              searchedList = value['songs'] as List<Map>? ?? [];
+              playlistName = value['name'] as String? ?? '';
+              playlistSubtitle = value['subtitle'] as String? ?? '';
+              playlistSecondarySubtitle = value['description'] as String?;
+              playlistImage = (value['images'] as List?)?.last as String? ?? '';
+              fetched = true;
+            } catch (e) {
+              Logger.root.severe('Error in fetching playlist details', e);
+              fetched = true;
+            }
+          });
+        });
+      }
+      // YouTubeServices().getPlaylistSongs(widget.playlistId).then((value) {
+      //   if (value.isNotEmpty) {
+      //     setState(() {
+      //       searchedList = value;
+      //       fetched = true;
+      //     });
+      //   } else {
+      //     status = false;
+      //   }
+      // });
     }
     super.initState();
   }
@@ -100,30 +155,33 @@ class _YouTubePlaylistState extends State<YouTubePlaylist> {
                   else
                     BouncyPlaylistHeaderScrollView(
                       scrollController: _scrollController,
-                      title: widget.playlistName,
-                      subtitle: widget.playlistSubtitle,
-                      secondarySubtitle: widget.playlistSecondarySubtitle,
-                      imageUrl: widget.playlistImage,
+                      title: playlistName,
+                      subtitle: playlistSubtitle,
+                      secondarySubtitle: playlistSecondarySubtitle,
+                      imageUrl: playlistImage,
+                      actions: [
+                        PlaylistPopupMenu(
+                          data: searchedList,
+                          title: playlistName,
+                        ),
+                      ],
                       onPlayTap: () async {
                         setState(() {
                           done = false;
                         });
 
                         final Map? response =
-                            await YouTubeServices().formatVideo(
-                          video: searchedList.first,
-                          quality: Hive.box('settings')
-                              .get(
-                                'ytQuality',
-                                defaultValue: 'Low',
-                              )
-                              .toString(),
+                            await YouTubeServices().formatVideoFromId(
+                          id: searchedList.first['id'].toString(),
+                          data: searchedList.first,
                         );
+                        final List<Map> playList = List.from(searchedList);
+                        playList[0] = response!;
                         setState(() {
                           done = true;
                         });
                         PlayerInvoke.init(
-                          songsList: [response],
+                          songsList: playList,
                           index: 0,
                           isOffline: false,
                           recommend: false,
@@ -134,22 +192,19 @@ class _YouTubePlaylistState extends State<YouTubePlaylist> {
                         setState(() {
                           done = false;
                         });
-
+                        final List<Map> playList = List.from(searchedList);
+                        playList.shuffle();
                         final Map? response =
-                            await YouTubeServices().formatVideo(
-                          video: searchedList.first,
-                          quality: Hive.box('settings')
-                              .get(
-                                'ytQuality',
-                                defaultValue: 'Low',
-                              )
-                              .toString(),
+                            await YouTubeServices().formatVideoFromId(
+                          id: playList.first['id'].toString(),
+                          data: playList.first,
                         );
+                        playList[0] = response!;
                         setState(() {
                           done = true;
                         });
                         PlayerInvoke.init(
-                          songsList: [response],
+                          songsList: playList,
                           index: 0,
                           isOffline: false,
                           recommend: false,
@@ -177,53 +232,49 @@ class _YouTubePlaylistState extends State<YouTubePlaylist> {
                                 ),
                               ),
                             ...searchedList.map(
-                              (Video entry) {
+                              (Map entry) {
                                 return Padding(
                                   padding: const EdgeInsets.only(
                                     left: 5.0,
                                   ),
                                   child: ListTile(
-                                    contentPadding: const EdgeInsets.only(
-                                      left: 15.0,
-                                    ),
-                                    leading: Card(
-                                      elevation: 8,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(
-                                          5.0,
-                                        ),
-                                      ),
-                                      clipBehavior: Clip.antiAlias,
-                                      child: SizedBox.square(
-                                        dimension: 50,
-                                        child: CachedNetworkImage(
-                                          fit: BoxFit.cover,
-                                          errorWidget: (context, _, __) =>
-                                              CachedNetworkImage(
-                                            fit: BoxFit.cover,
-                                            imageUrl:
-                                                entry.thumbnails.standardResUrl,
-                                            errorWidget: (context, _, __) =>
-                                                const Image(
-                                              fit: BoxFit.cover,
-                                              image: AssetImage(
-                                                'assets/cover.jpg',
+                                    leading: widget.type == 'album'
+                                        ? null
+                                        : Card(
+                                            margin: EdgeInsets.zero,
+                                            elevation: 8,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                5.0,
+                                              ),
+                                            ),
+                                            clipBehavior: Clip.antiAlias,
+                                            child: SizedBox.square(
+                                              dimension: 50,
+                                              child: CachedNetworkImage(
+                                                fit: BoxFit.cover,
+                                                errorWidget: (context, _, __) =>
+                                                    const Image(
+                                                  fit: BoxFit.cover,
+                                                  image: AssetImage(
+                                                    'assets/cover.jpg',
+                                                  ),
+                                                ),
+                                                imageUrl:
+                                                    entry['image'].toString(),
+                                                placeholder: (context, url) =>
+                                                    const Image(
+                                                  fit: BoxFit.cover,
+                                                  image: AssetImage(
+                                                    'assets/cover.jpg',
+                                                  ),
+                                                ),
                                               ),
                                             ),
                                           ),
-                                          imageUrl: entry.thumbnails.maxResUrl,
-                                          placeholder: (context, url) =>
-                                              const Image(
-                                            fit: BoxFit.cover,
-                                            image: AssetImage(
-                                              'assets/cover.jpg',
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
                                     title: Text(
-                                      entry.title,
+                                      entry['title'].toString(),
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(
                                         fontWeight: FontWeight.w500,
@@ -232,41 +283,24 @@ class _YouTubePlaylistState extends State<YouTubePlaylist> {
                                     onLongPress: () {
                                       copyToClipboard(
                                         context: context,
-                                        text: entry.title,
+                                        text: entry['title'].toString(),
                                       );
                                     },
-                                    subtitle: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            entry.author,
+                                    subtitle: entry['subtitle'] == ''
+                                        ? null
+                                        : Text(
+                                            entry['subtitle'].toString(),
                                             overflow: TextOverflow.ellipsis,
                                           ),
-                                        ),
-                                        Text(
-                                          entry.duration
-                                              .toString()
-                                              .split('.')[0]
-                                              .replaceFirst('0:0', ''),
-                                        ),
-                                      ],
-                                    ),
                                     onTap: () async {
                                       setState(() {
                                         done = false;
                                       });
-
                                       final Map? response =
-                                          await YouTubeServices().formatVideo(
-                                        video: entry,
-                                        quality: Hive.box('settings')
-                                            .get(
-                                              'ytQuality',
-                                              defaultValue: 'Low',
-                                            )
-                                            .toString(),
+                                          await YouTubeServices()
+                                              .formatVideoFromId(
+                                        id: entry['id'].toString(),
+                                        data: entry,
                                       );
                                       setState(() {
                                         done = true;
@@ -309,7 +343,7 @@ class _YouTubePlaylistState extends State<YouTubePlaylist> {
                                   ),
                                 );
                               },
-                            ).toList(),
+                            ),
                           ],
                         ),
                       ),

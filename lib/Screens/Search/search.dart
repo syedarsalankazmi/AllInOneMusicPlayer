@@ -168,7 +168,7 @@ class _SearchPageState extends State<SearchPage> {
                           child: Column(
                             children: [
                               const SizedBox(
-                                height: 70,
+                                height: 100,
                               ),
                               Align(
                                 alignment: Alignment.topLeft,
@@ -188,7 +188,7 @@ class _SearchPageState extends State<SearchPage> {
                                             labelStyle: TextStyle(
                                               color: Theme.of(context)
                                                   .textTheme
-                                                  .bodyText1!
+                                                  .bodyLarge!
                                                   .color,
                                               fontWeight: FontWeight.normal,
                                             ),
@@ -274,7 +274,7 @@ class _SearchPageState extends State<SearchPage> {
                                                   labelStyle: TextStyle(
                                                     color: Theme.of(context)
                                                         .textTheme
-                                                        .bodyText1!
+                                                        .bodyLarge!
                                                         .color,
                                                     fontWeight:
                                                         FontWeight.normal,
@@ -331,7 +331,7 @@ class _SearchPageState extends State<SearchPage> {
                               ? nothingFound(context)
                               : SingleChildScrollView(
                                   padding: const EdgeInsets.only(
-                                    top: 70,
+                                    top: 100,
                                   ),
                                   physics: const BouncingScrollPhysics(),
                                   child: Column(
@@ -453,7 +453,7 @@ class _SearchPageState extends State<SearchPage> {
                                                                       context,
                                                                     )
                                                                         .textTheme
-                                                                        .caption!
+                                                                        .bodySmall!
                                                                         .color,
                                                                     fontWeight:
                                                                         FontWeight
@@ -468,7 +468,7 @@ class _SearchPageState extends State<SearchPage> {
                                                                     context,
                                                                   )
                                                                       .textTheme
-                                                                      .caption!
+                                                                      .bodySmall!
                                                                       .color,
                                                                 ),
                                                               ],
@@ -532,6 +532,7 @@ class _SearchPageState extends State<SearchPage> {
                                                           value[0]['type'] ==
                                                               'album'),
                                                   leading: Card(
+                                                    margin: EdgeInsets.zero,
                                                     elevation: 8,
                                                     shape:
                                                         RoundedRectangleBorder(

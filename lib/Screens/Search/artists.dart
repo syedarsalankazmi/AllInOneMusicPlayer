@@ -37,6 +37,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../Helpers/image_resolution_modifier.dart';
+
 class ArtistSearchPage extends StatefulWidget {
   final Map data;
 
@@ -127,11 +129,8 @@ class _ArtistSearchPageState extends State<ArtistSearchPage> {
                           title: widget.data['title']?.toString() ??
                               AppLocalizations.of(context)!.songs,
                           placeholderImage: 'assets/artist.png',
-                          imageUrl: widget.data['image']
-                              .toString()
-                              .replaceAll('http:', 'https:')
-                              .replaceAll('50x50', '500x500')
-                              .replaceAll('150x150', '500x500'),
+                          imageUrl:
+                              getImageUrl(widget.data['image'].toString()),
                           sliverList: SliverList(
                             delegate: SliverChildListDelegate(
                               [
@@ -421,7 +420,7 @@ class _ArtistSearchPageState extends State<ArtistSearchPage> {
                                                                 .secondary
                                                             : Theme.of(context)
                                                                 .textTheme
-                                                                .bodyText1!
+                                                                .bodyLarge!
                                                                 .color,
                                                         fontWeight: category ==
                                                                 ''
@@ -462,7 +461,7 @@ class _ArtistSearchPageState extends State<ArtistSearchPage> {
                                                                 .secondary
                                                             : Theme.of(context)
                                                                 .textTheme
-                                                                .bodyText1!
+                                                                .bodyLarge!
                                                                 .color,
                                                         fontWeight: category ==
                                                                 'latest'
@@ -504,7 +503,7 @@ class _ArtistSearchPageState extends State<ArtistSearchPage> {
                                                                 .secondary
                                                             : Theme.of(context)
                                                                 .textTheme
-                                                                .bodyText1!
+                                                                .bodyLarge!
                                                                 .color,
                                                         fontWeight: category ==
                                                                 'alphabetical'
@@ -621,6 +620,7 @@ class _ArtistSearchPageState extends State<ArtistSearchPage> {
                                                       TextOverflow.ellipsis,
                                                 ),
                                                 leading: Card(
+                                                  margin: EdgeInsets.zero,
                                                   elevation: 8,
                                                   shape: RoundedRectangleBorder(
                                                     borderRadius:
@@ -732,7 +732,7 @@ class _ArtistSearchPageState extends State<ArtistSearchPage> {
                                       ],
                                     );
                                   },
-                                ).toList(),
+                                ),
                               ],
                             ),
                           ),

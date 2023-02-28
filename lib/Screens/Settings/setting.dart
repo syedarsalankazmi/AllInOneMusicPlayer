@@ -49,7 +49,8 @@ class SettingPage extends StatefulWidget {
   _SettingPageState createState() => _SettingPageState();
 }
 
-class _SettingPageState extends State<SettingPage> {
+class _SettingPageState extends State<SettingPage>
+    with AutomaticKeepAliveClientMixin<SettingPage> {
   String? appVersion;
   final Box settingsBox = Hive.box('settings');
   final MyTheme currentTheme = GetIt.I<MyTheme>();
@@ -121,12 +122,21 @@ class _SettingPageState extends State<SettingPage> {
     'preferredMiniButtons',
     defaultValue: ['Like', 'Play/Pause', 'Next'],
   )?.toList() as List;
+  final ValueNotifier<List> sectionsToShow = ValueNotifier<List>(
+    Hive.box('settings').get(
+      'sectionsToShow',
+      defaultValue: ['Home', 'Top Charts', 'YouTube', 'Library'],
+    ) as List,
+  );
 
   @override
   void initState() {
     main();
     super.initState();
   }
+
+  @override
+  bool get wantKeepAlive => sectionsToShow.value.contains('Settings');
 
   Future<void> main() async {
     final PackageInfo packageInfo = await PackageInfo.fromPlatform();
@@ -157,6 +167,7 @@ class _SettingPageState extends State<SettingPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final List<String> userThemesList = <String>[
       'Default',
       ...userThemes.keys.map((theme) => theme as String),
@@ -824,7 +835,7 @@ class _SettingPageState extends State<SettingPage> {
                                     fontSize: 12,
                                     color: Theme.of(context)
                                         .textTheme
-                                        .bodyText1!
+                                        .bodyLarge!
                                         .color,
                                   ),
                                   underline: const SizedBox(),
@@ -871,7 +882,7 @@ class _SettingPageState extends State<SettingPage> {
                                     fontSize: 12,
                                     color: Theme.of(context)
                                         .textTheme
-                                        .bodyText1!
+                                        .bodyLarge!
                                         .color,
                                   ),
                                   underline: const SizedBox(),
@@ -953,7 +964,7 @@ class _SettingPageState extends State<SettingPage> {
                             style: TextStyle(
                               fontSize: 12,
                               color:
-                                  Theme.of(context).textTheme.bodyText1!.color,
+                                  Theme.of(context).textTheme.bodyLarge!.color,
                             ),
                             underline: const SizedBox(),
                             onChanged: (String? themeChoice) {
@@ -1392,29 +1403,53 @@ class _SettingPageState extends State<SettingPage> {
                                             ),
                                           ),
                                           children: order.map((e) {
-                                            return CheckboxListTile(
+                                            return Row(
                                               key: Key(e),
-                                              dense: true,
-                                              activeColor: Theme.of(context)
-                                                  .colorScheme
-                                                  .secondary,
-                                              checkColor: Theme.of(context)
-                                                          .colorScheme
-                                                          .secondary ==
-                                                      Colors.white
-                                                  ? Colors.black
-                                                  : null,
-                                              value: checked.contains(e),
-                                              title: Text(e),
-                                              onChanged: (bool? value) {
-                                                setStt(
-                                                  () {
-                                                    value!
-                                                        ? checked.add(e)
-                                                        : checked.remove(e);
-                                                  },
-                                                );
-                                              },
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                ReorderableDragStartListener(
+                                                  index: order.indexOf(e),
+                                                  child: const Icon(
+                                                    Icons.drag_handle_rounded,
+                                                  ),
+                                                ),
+                                                Expanded(
+                                                  child: SizedBox(
+                                                    child: CheckboxListTile(
+                                                      dense: true,
+                                                      contentPadding:
+                                                          const EdgeInsets.only(
+                                                        left: 16.0,
+                                                      ),
+                                                      activeColor:
+                                                          Theme.of(context)
+                                                              .colorScheme
+                                                              .secondary,
+                                                      checkColor: Theme.of(
+                                                                context,
+                                                              )
+                                                                  .colorScheme
+                                                                  .secondary ==
+                                                              Colors.white
+                                                          ? Colors.black
+                                                          : null,
+                                                      value:
+                                                          checked.contains(e),
+                                                      title: Text(e),
+                                                      onChanged: (bool? value) {
+                                                        setStt(
+                                                          () {
+                                                            value!
+                                                                ? checked.add(e)
+                                                                : checked
+                                                                    .remove(e);
+                                                          },
+                                                        );
+                                                      },
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
                                             );
                                           }).toList(),
                                         ),
@@ -1666,6 +1701,55 @@ class _SettingPageState extends State<SettingPage> {
                         //   keyName: 'showHistory',
                         //   defaultValue: true,
                         // ),
+                        ValueListenableBuilder(
+                          valueListenable: sectionsToShow,
+                          builder: (
+                            BuildContext context,
+                            List items,
+                            Widget? child,
+                          ) {
+                            return SwitchListTile(
+                              activeColor:
+                                  Theme.of(context).colorScheme.secondary,
+                              title: Text(
+                                AppLocalizations.of(
+                                  context,
+                                )!
+                                    .showTopCharts,
+                              ),
+                              subtitle: Text(
+                                AppLocalizations.of(
+                                  context,
+                                )!
+                                    .showTopChartsSub,
+                              ),
+                              dense: true,
+                              value: items.contains('Top Charts'),
+                              onChanged: (val) {
+                                if (val) {
+                                  sectionsToShow.value = [
+                                    'Home',
+                                    'Top Charts',
+                                    'YouTube',
+                                    'Library'
+                                  ];
+                                } else {
+                                  sectionsToShow.value = [
+                                    'Home',
+                                    'YouTube',
+                                    'Library',
+                                    'Settings'
+                                  ];
+                                }
+                                settingsBox.put(
+                                  'sectionsToShow',
+                                  sectionsToShow.value,
+                                );
+                                widget.callback!();
+                              },
+                            );
+                          },
+                        ),
                         BoxSwitchTile(
                           title: Text(
                             AppLocalizations.of(
@@ -1932,7 +2016,7 @@ class _SettingPageState extends State<SettingPage> {
                             style: TextStyle(
                               fontSize: 12,
                               color:
-                                  Theme.of(context).textTheme.bodyText1!.color,
+                                  Theme.of(context).textTheme.bodyLarge!.color,
                             ),
                             underline: const SizedBox(),
                             onChanged: (String? newValue) {
@@ -1975,7 +2059,7 @@ class _SettingPageState extends State<SettingPage> {
                             style: TextStyle(
                               fontSize: 12,
                               color:
-                                  Theme.of(context).textTheme.bodyText1!.color,
+                                  Theme.of(context).textTheme.bodyLarge!.color,
                             ),
                             underline: const SizedBox(),
                             onChanged: (String? newValue) {
@@ -2064,22 +2148,22 @@ class _SettingPageState extends State<SettingPage> {
                           defaultValue: true,
                           isThreeLine: true,
                         ),
-                        // BoxSwitchTile(
-                        //   title: Text(
-                        //     AppLocalizations.of(
-                        //       context,
-                        //     )!
-                        //         .cacheSong,
-                        //   ),
-                        //   subtitle: Text(
-                        //     AppLocalizations.of(
-                        //       context,
-                        //     )!
-                        //         .cacheSongSub,
-                        //   ),
-                        //   keyName: 'cacheSong',
-                        //   defaultValue: false,
-                        // ),
+                        BoxSwitchTile(
+                          title: Text(
+                            AppLocalizations.of(
+                              context,
+                            )!
+                                .cacheSong,
+                          ),
+                          subtitle: Text(
+                            AppLocalizations.of(
+                              context,
+                            )!
+                                .cacheSongSub,
+                          ),
+                          keyName: 'cacheSong',
+                          defaultValue: true,
+                        ),
                       ],
                     ),
                   ),
@@ -2133,7 +2217,7 @@ class _SettingPageState extends State<SettingPage> {
                             style: TextStyle(
                               fontSize: 12,
                               color:
-                                  Theme.of(context).textTheme.bodyText1!.color,
+                                  Theme.of(context).textTheme.bodyLarge!.color,
                             ),
                             underline: const SizedBox(),
                             onChanged: (String? newValue) {
@@ -2178,7 +2262,7 @@ class _SettingPageState extends State<SettingPage> {
                             style: TextStyle(
                               fontSize: 12,
                               color:
-                                  Theme.of(context).textTheme.bodyText1!.color,
+                                  Theme.of(context).textTheme.bodyLarge!.color,
                             ),
                             underline: const SizedBox(),
                             onChanged: (String? newValue) {
@@ -2223,6 +2307,7 @@ class _SettingPageState extends State<SettingPage> {
                               downloadPath =
                                   await ExtStorageProvider.getExtStorage(
                                         dirName: 'Music',
+                                        writeAccess: true,
                                       ) ??
                                       '/storage/emulated/0/Music';
                               Hive.box('settings')
@@ -2460,7 +2545,7 @@ class _SettingPageState extends State<SettingPage> {
                             style: TextStyle(
                               fontSize: 12,
                               color:
-                                  Theme.of(context).textTheme.bodyText1!.color,
+                                  Theme.of(context).textTheme.bodyLarge!.color,
                             ),
                             underline: const SizedBox(),
                             onChanged: (String? newValue) {
@@ -2564,7 +2649,7 @@ class _SettingPageState extends State<SettingPage> {
                                                                 .secondary
                                                             : Theme.of(context)
                                                                 .textTheme
-                                                                .bodyText1!
+                                                                .bodyLarge!
                                                                 .color,
                                                         fontWeight: !value
                                                             ? FontWeight.w600
@@ -2603,7 +2688,7 @@ class _SettingPageState extends State<SettingPage> {
                                                                 .secondary
                                                             : Theme.of(context)
                                                                 .textTheme
-                                                                .bodyText1!
+                                                                .bodyLarge!
                                                                 .color,
                                                         fontWeight: value
                                                             ? FontWeight.w600
@@ -3103,7 +3188,7 @@ class _SettingPageState extends State<SettingPage> {
                             final Directory tempDir =
                                 await getTemporaryDirectory();
                             final files = <XFile>[
-                              XFile('${tempDir.path}/logs/logs.log')
+                              XFile('${tempDir.path}/logs/logs.txt')
                             ];
                             Share.shareXFiles(files);
                           },
@@ -3410,8 +3495,9 @@ class _SettingPageState extends State<SettingPage> {
                             onPressed: () async {
                               autoBackPath = await ExtStorageProvider
                                       .getExtStorage(
-                                    dirName: 'AllInOneMusicPlayer/Backups',
-                                  ) ??
+                                          dirName:
+                                              'AllInOneMusicPlayer/Backups',
+                                          writeAccess: true) ??
                                   '/storage/emulated/0/AllInOneMusicPlayer/Backups';
                               Hive.box('settings')
                                   .put('autoBackPath', autoBackPath);

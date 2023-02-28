@@ -21,6 +21,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:all_in_one_music_player/Services/youtube_services.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:all_in_one_music_player/APIs/api.dart';
@@ -32,6 +33,8 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:logging/logging.dart';
 import 'package:rxdart/rxdart.dart';
+
+import '../Helpers/playlist.dart';
 
 class AudioPlayerHandlerImpl extends BaseAudioHandler
     with QueueHandler, SeekHandler
@@ -49,10 +52,12 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
   // late String? stationId = '';
   // late List<String> stationNames = [];
   // late String stationType = 'entity';
-  // late bool cacheSong;
+  late bool cacheSong;
   final _equalizer = AndroidEqualizer();
 
   Box downloadsBox = Hive.box('downloads');
+  final List<MediaItem> refreshLinks = [];
+  bool jobRunning = false;
 
   final BehaviorSubject<List<MediaItem>> _recentSubject =
       BehaviorSubject.seeded(<MediaItem>[]);
@@ -118,10 +123,10 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
   }
 
   Future<void> _init() async {
+    Logger.root.info('starting audio service');
     final session = await AudioSession.instance;
     await session.configure(const AudioSessionConfiguration.music());
 
-    await initializeLogging();
     await startService();
 
     speed.debounceTime(const Duration(milliseconds: 250)).listen((speed) {
@@ -133,8 +138,8 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
         .toString();
     resetOnSkip =
         Hive.box('settings').get('resetOnSkip', defaultValue: false) as bool;
-    // cacheSong =
-    //     Hive.box('settings').get('cacheSong', defaultValue: false) as bool;
+    cacheSong =
+        Hive.box('settings').get('cacheSong', defaultValue: true) as bool;
     recommend =
         Hive.box('settings').get('autoplay', defaultValue: true) as bool;
     loadStart =
@@ -149,54 +154,36 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
         }
       }
 
-      if (item.genre == 'YouTube') {
-        final int expiredAt =
-            int.parse((item.extras!['expire_at'] ?? '0').toString());
-        if ((DateTime.now().millisecondsSinceEpoch ~/ 1000) + 350 > expiredAt) {
-          Logger.root.info('youtube link expired');
-          // _player!.seekToNext();
-          // final index = queue.value.indexOf(item);
-          // print(index);
-          // _playlist.insert(
-          //   index,
-          //   AudioSource.uri(
-          //     Uri.parse(newUrl),
-          //   ),
-          // );
-          // _playlist.removeAt(index);
-        }
-      }
-
       if (item.artUri.toString().startsWith('http') &&
           item.genre != 'YouTube') {
         addRecentlyPlayed(item);
         _recentSubject.add([item]);
 
         if (recommend && item.extras!['autoplay'] as bool) {
-          Future.delayed(const Duration(seconds: 1), () async {
-            final List<MediaItem> mediaQueue = queue.value;
-            final int index = mediaQueue.indexOf(item);
-            final int queueLength = mediaQueue.length;
-            if (queueLength - index > 2) {
-              await Future.delayed(const Duration(seconds: 10), () {});
-            }
-            if (item == mediaItem.value) {
-              final List value = await SaavnAPI().getReco(item.id);
-              value.shuffle();
-              // final List value = await SaavnAPI().getRadioSongs(
-              //     stationId: stationId!, count: queueLength - index - 20);
+          final List<MediaItem> mediaQueue = queue.value;
+          final int index = mediaQueue.indexOf(item);
+          final int queueLength = mediaQueue.length;
+          if (queueLength - index < 5) {
+            Logger.root.info('less than 5 songs remaining, adding more songs');
+            Future.delayed(const Duration(seconds: 1), () async {
+              if (item == mediaItem.value) {
+                final List value = await SaavnAPI().getReco(item.id);
+                value.shuffle();
+                // final List value = await SaavnAPI().getRadioSongs(
+                //     stationId: stationId!, count: queueLength - index - 20);
 
-              for (int i = 0; i < value.length; i++) {
-                final element = MediaItemConverter.mapToMediaItem(
-                  value[i] as Map,
-                  addedByAutoplay: true,
-                );
-                if (!mediaQueue.contains(element)) {
-                  addQueueItem(element);
+                for (int i = 0; i < value.length; i++) {
+                  final element = MediaItemConverter.mapToMediaItem(
+                    value[i] as Map,
+                    addedByAutoplay: true,
+                  );
+                  if (!mediaQueue.contains(element)) {
+                    addQueueItem(element);
+                  }
                 }
               }
-            }
-          });
+            });
+          }
         }
       }
     });
@@ -287,6 +274,76 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
       Logger.root.severe('Error while loading last queue', e);
       await _player!.setAudioSource(_playlist, preload: false);
     }
+    if (!jobRunning) {
+      refreshJob();
+    }
+  }
+
+  Future<void> refreshJob() async {
+    jobRunning = true;
+    while (refreshLinks.isNotEmpty) {
+      Logger.root.info('===============================');
+      Logger.root.info('refreshing link');
+      await refreshLink(refreshLinks.removeAt(0));
+    }
+    jobRunning = false;
+  }
+
+  Future<void> refreshLink(MediaItem mediaItem) async {
+    final newData = await YouTubeServices().refreshLink(mediaItem.id);
+    Logger.root.info('received new link for ${mediaItem.title}');
+    if (newData != null) {
+      Hive.box('ytlinkcache').put(
+        newData['id'],
+        {
+          'url': newData['url'],
+          'expire_at': newData['expire_at'],
+          'cached': cacheSong.toString(),
+        },
+      );
+      final MediaItem newItem = mediaItem.copyWith(
+        extras: mediaItem.extras!
+          ..['url'] = newData['url']
+          ..['duration'] = newData['duration']
+          ..['expire_at'] = newData['expire_at'],
+      );
+      final String? boxName = mediaItem.extras!['playlistBox']?.toString();
+      if (boxName != null) {
+        Logger.root.info('linked with playlist $boxName');
+        if (Hive.box(mediaItem.extras!['playlistBox'].toString())
+            .containsKey(mediaItem.id)) {
+          Logger.root.info('updating item in playlist $boxName');
+          Hive.box(mediaItem.extras!['playlistBox'].toString()).put(
+            mediaItem.id,
+            MediaItemConverter.mediaItemToMap(newItem),
+          );
+          // put(
+          //   mediaItem.id,
+          //   MediaItemConverter.mediaItemToMap(newItem),
+          // );
+        }
+      }
+      Logger.root.info('inserting new item');
+      late AudioSource audioSource;
+      if (cacheSong) {
+        audioSource = LockCachingAudioSource(
+          Uri.parse(
+            newItem.extras!['url'].toString(),
+          ),
+        );
+      } else {
+        audioSource = AudioSource.uri(
+          Uri.parse(
+            newItem.extras!['url'].toString(),
+          ),
+        );
+      }
+      final index = queue.value.indexWhere((item) => item.id == newItem.id);
+      _mediaItemExpando[audioSource] = mediaItem;
+      _playlist
+          .removeAt(index)
+          .then((value) => _playlist.insert(index, audioSource));
+    }
   }
 
   AudioSource _itemToSource(MediaItem mediaItem) {
@@ -300,27 +357,76 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
           Uri.file(
             (downloadsBox.get(mediaItem.id) as Map)['path'].toString(),
           ),
+          tag: mediaItem.id,
         );
       } else {
-        // if (cacheSong) {
-        //   _audioSource = LockCachingAudioSource(
-        //     Uri.parse(
-        //       mediaItem.extras!['url'].toString().replaceAll(
-        //             '_96.',
-        //             "_${preferredQuality.replaceAll(' kbps', '')}.",
-        //           ),
-        //     ),
-        //   );
-        // } else {
-        audioSource = AudioSource.uri(
-          Uri.parse(
-            mediaItem.extras!['url'].toString().replaceAll(
-                  '_96.',
-                  "_${preferredQuality.replaceAll(' kbps', '')}.",
-                ),
-          ),
-        );
-        // }
+        if (mediaItem.genre == 'YouTube') {
+          final int expiredAt =
+              int.parse((mediaItem.extras!['expire_at'] ?? '0').toString());
+          if ((DateTime.now().millisecondsSinceEpoch ~/ 1000) + 350 >
+              expiredAt) {
+            Logger.root.info(
+              'youtube link expired for ${mediaItem.title}, searching cache',
+            );
+            if (Hive.box('ytlinkcache').containsKey(mediaItem.id)) {
+              final Map cachedData =
+                  Hive.box('ytlinkcache').get(mediaItem.id) as Map;
+              final int cachedExpiredAt =
+                  int.parse(cachedData['expire_at'].toString());
+              final String wasCacheEnabled = cachedData['cached'].toString();
+              if ((DateTime.now().millisecondsSinceEpoch ~/ 1000) + 350 >
+                      cachedExpiredAt &&
+                  wasCacheEnabled != 'true') {
+                Logger.root.info(
+                  'youtube link expired for ${mediaItem.title}, refreshing',
+                );
+                refreshLinks.add(mediaItem);
+                if (!jobRunning) {
+                  refreshJob();
+                }
+              } else {
+                Logger.root.info(
+                  'youtube link found in cache for ${mediaItem.title}',
+                );
+                if (cacheSong) {
+                  audioSource = LockCachingAudioSource(
+                    Uri.parse(cachedData['url'].toString()),
+                  );
+                } else {
+                  audioSource =
+                      AudioSource.uri(Uri.parse(cachedData['url'].toString()));
+                }
+              }
+            } else {
+              Logger.root.info(
+                'youtube link not found in cache for ${mediaItem.title}, refreshing',
+              );
+              refreshLinks.add(mediaItem);
+              if (!jobRunning) {
+                refreshJob();
+              }
+            }
+          }
+        }
+        if (cacheSong) {
+          audioSource = LockCachingAudioSource(
+            Uri.parse(
+              mediaItem.extras!['url'].toString().replaceAll(
+                    '_96.',
+                    "_${preferredQuality.replaceAll(' kbps', '')}.",
+                  ),
+            ),
+          );
+        } else {
+          audioSource = AudioSource.uri(
+            Uri.parse(
+              mediaItem.extras!['url'].toString().replaceAll(
+                    '_96.',
+                    "_${preferredQuality.replaceAll(' kbps', '')}.",
+                  ),
+            ),
+          );
+        }
       }
     }
 
@@ -332,8 +438,8 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
     preferredQuality = Hive.box('settings')
         .get('streamingQuality', defaultValue: '96 kbps')
         .toString();
-    // cacheSong =
-    //     Hive.box('settings').get('cacheSong', defaultValue: false) as bool;
+    cacheSong =
+        Hive.box('settings').get('cacheSong', defaultValue: true) as bool;
     useDown = Hive.box('settings').get('useDown', defaultValue: true) as bool;
     return mediaItems.map(_itemToSource).toList();
   }
@@ -379,6 +485,7 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
     final bool withPipeline =
         Hive.box('settings').get('supportEq', defaultValue: false) as bool;
     if (withPipeline && Platform.isAndroid) {
+      Logger.root.info('starting with eq pipeline');
       final AudioPipeline pipeline = AudioPipeline(
         androidAudioEffects: [
           _equalizer,
@@ -386,11 +493,13 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
       );
       _player = AudioPlayer(audioPipeline: pipeline);
     } else {
+      Logger.root.info('starting without eq pipeline');
       _player = AudioPlayer();
     }
   }
 
   Future<void> addRecentlyPlayed(MediaItem mediaitem) async {
+    Logger.root.info('adding ${mediaitem.id} to recently played');
     List recentList = await Hive.box('cache')
         .get('recentSongs', defaultValue: [])?.toList() as List;
 
@@ -409,6 +518,7 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
 
   Future<void> addLastQueue(List<MediaItem> queue) async {
     if (queue.first.genre != 'YouTube') {
+      Logger.root.info('saving last queue');
       final lastQueue =
           queue.map((item) => MediaItemConverter.mediaItemToMap(item)).toList();
       Hive.box('cache').put('lastQueue', lastQueue);
@@ -480,6 +590,23 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
 
   @override
   Future<void> skipToNext() => _player!.seekToNext();
+
+  /// This is called when the user presses the "like" button.
+  @override
+  Future<void> fastForward() async {
+    if (mediaItem.value?.id != null) {
+      addItemToPlaylist('Favorite Songs', mediaItem.value!);
+      _broadcastState(_player!.playbackEvent);
+    }
+  }
+
+  @override
+  Future<void> rewind() async {
+    if (mediaItem.value?.id != null) {
+      removeLiked(mediaItem.value!.id);
+      _broadcastState(_player!.playbackEvent);
+    }
+  }
 
   @override
   Future<void> skipToPrevious() async {
@@ -558,6 +685,30 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
 
     if (name == 'setEqualizer') {
       _equalizer.setEnabled(extras!['value'] as bool);
+    }
+
+    if (name == 'fastForward') {
+      try {
+        const stepInterval = Duration(seconds: 10);
+        Duration newPosition = _player!.position + stepInterval;
+        if (newPosition < Duration.zero) newPosition = Duration.zero;
+        if (newPosition > _player!.duration!) newPosition = _player!.duration!;
+        _player!.seek(newPosition);
+      } catch (e) {
+        Logger.root.severe('Error in fastForward', e);
+      }
+    }
+
+    if (name == 'rewind') {
+      try {
+        const stepInterval = Duration(seconds: 10);
+        Duration newPosition = _player!.position - stepInterval;
+        if (newPosition < Duration.zero) newPosition = Duration.zero;
+        if (newPosition > _player!.duration!) newPosition = _player!.duration!;
+        _player!.seek(newPosition);
+      } catch (e) {
+        Logger.root.severe('Error in rewind', e);
+      }
     }
 
     if (name == 'getEqualizerParams') {
@@ -667,6 +818,10 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
   /// Broadcasts the current state to all clients.
   void _broadcastState(PlaybackEvent event) {
     final playing = _player!.playing;
+    bool liked = false;
+    if (mediaItem.value != null) {
+      liked = checkPlaylist('Favorite Songs', mediaItem.value!.id);
+    }
     final queueIndex = getQueueIndex(
       event.currentIndex,
       _player!.shuffleIndices,
@@ -675,9 +830,11 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
     playbackState.add(
       playbackState.value.copyWith(
         controls: [
+          if (liked) MediaControl.rewind else MediaControl.fastForward,
           MediaControl.skipToPrevious,
           if (playing) MediaControl.pause else MediaControl.play,
           MediaControl.skipToNext,
+          // workaround to add like button
           MediaControl.stop,
         ],
         systemActions: const {
@@ -685,7 +842,7 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
           MediaAction.seekForward,
           MediaAction.seekBackward,
         },
-        androidCompactActionIndices: const [0, 1, 2],
+        androidCompactActionIndices: const [0, 2, 3],
         processingState: const {
           ProcessingState.idle: AudioProcessingState.idle,
           ProcessingState.loading: AudioProcessingState.loading,

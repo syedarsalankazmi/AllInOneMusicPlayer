@@ -30,6 +30,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:logging/logging.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -145,8 +146,7 @@ Future<void> importFile(
   List playlistNames,
   Box settingsBox,
 ) async {
-  final newPlaylistNames = await importPlaylist(context, playlistNames);
-  settingsBox.put('playlistNames', newPlaylistNames);
+  await importFilePlaylist(context, playlistNames);
 }
 
 Future<void> connectToSpotify(
@@ -154,13 +154,9 @@ Future<void> connectToSpotify(
   List playlistNames,
   Box settingsBox,
 ) async {
-  String code;
-  String accessToken =
-      settingsBox.get('spotifyAccessToken', defaultValue: 'null').toString();
-  String refreshToken =
-      settingsBox.get('spotifyRefreshToken', defaultValue: 'null').toString();
+  final String? accessToken = await retriveAccessToken();
 
-  if (accessToken == 'null' || refreshToken == 'null') {
+  if (accessToken == null) {
     launchUrl(
       Uri.parse(
         SpotifyApi().requestAuthorization(),
@@ -171,7 +167,7 @@ Future<void> connectToSpotify(
       onAppLink: (Uri uri, String link) async {
         closeInAppWebView();
         if (link.contains('code=')) {
-          code = link.split('code=')[1];
+          final code = link.split('code=')[1];
           settingsBox.put('spotifyAppCode', code);
           final currentTime = DateTime.now().millisecondsSinceEpoch / 1000;
           final List<String> data =
@@ -194,23 +190,6 @@ Future<void> connectToSpotify(
       },
     );
   } else {
-    final double expiredAt = Hive.box('settings')
-        .get('spotifyTokenExpireAt', defaultValue: 0) as double;
-    final currentTime = DateTime.now().millisecondsSinceEpoch / 1000;
-    if ((currentTime + 60) >= expiredAt) {
-      final List<String> data =
-          await SpotifyApi().getAccessToken(refreshToken: refreshToken);
-      if (data.isNotEmpty) {
-        accessToken = data[0];
-        Hive.box('settings').put('spotifyAccessToken', data[0]);
-        if (data[1] != 'null') {
-          refreshToken = data[1];
-          Hive.box('settings').put('spotifyRefreshToken', data[1]);
-        }
-        Hive.box('settings')
-            .put('spotifyTokenExpireAt', currentTime + int.parse(data[2]));
-      }
-    }
     await fetchPlaylists(
       accessToken,
       context,
@@ -219,6 +198,8 @@ Future<void> connectToSpotify(
     );
   }
 }
+
+retriveAccessToken() {}
 
 Future<void> importYt(
   BuildContext context,
@@ -236,6 +217,9 @@ Future<void> importYt(
       final Map data = await SearchAddPlaylist.addYtPlaylist(link);
       if (data.isNotEmpty) {
         if (data['title'] == '' && data['count'] == 0) {
+          Logger.root.severe(
+            'Failed to import YT playlist. Data not empty but title or the count is empty.',
+          );
           ShowSnackBar().showSnackBar(
             context,
             '${AppLocalizations.of(context)!.failedImport}\n${AppLocalizations.of(context)!.confirmViewable}',
@@ -260,6 +244,9 @@ Future<void> importYt(
           );
         }
       } else {
+        Logger.root.severe(
+          'Failed to import YT playlist. Data is empty.',
+        );
         ShowSnackBar().showSnackBar(
           context,
           AppLocalizations.of(context)!.failedImport,
@@ -305,6 +292,9 @@ Future<void> importResso(
           ),
         );
       } else {
+        Logger.root.severe(
+          'Failed to import Resso playlist. Data is empty.',
+        );
         ShowSnackBar().showSnackBar(
           context,
           AppLocalizations.of(context)!.failedImport,
@@ -348,6 +338,9 @@ Future<void> importSpotify(
       ),
     );
   } else {
+    Logger.root.severe(
+      'Failed to import Spotify playlist. Data is empty.',
+    );
     ShowSnackBar().showSnackBar(
       context,
       AppLocalizations.of(context)!.failedImport,
@@ -404,6 +397,7 @@ Future<void> importJioSaavn(
         addPlaylist(playName, data['tracks'] as List);
         playlistNames.add(playName);
       } else {
+        Logger.root.severe('Failed to import JioSaavn playlist. data is empty');
         ShowSnackBar().showSnackBar(
           context,
           AppLocalizations.of(context)!.failedImport,
@@ -439,6 +433,7 @@ Future<void> fetchPlaylists(
                   AppLocalizations.of(context)!.importPublicPlaylist,
                 ),
                 leading: Card(
+                  margin: EdgeInsets.zero,
                   elevation: 0,
                   color: Colors.transparent,
                   child: SizedBox.square(
@@ -478,6 +473,7 @@ Future<void> fetchPlaylists(
                           : '$playTotal ${AppLocalizations.of(context)!.songs}',
                     ),
                     leading: Card(
+                      margin: EdgeInsets.zero,
                       elevation: 8,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(7.0),

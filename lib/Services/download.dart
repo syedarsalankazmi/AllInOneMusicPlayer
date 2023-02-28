@@ -17,7 +17,6 @@
  * Copyright (c) 2021-2022, Syed Arsalan Kazmi
  */
 
-import 'dart:developer';
 import 'dart:io';
 
 import 'package:audiotagger/audiotagger.dart';
@@ -76,10 +75,13 @@ class Download with ChangeNotifier {
     bool createFolder = false,
     String? folderName,
   }) async {
+    Logger.root.info('Preparing download for ${data['title']}');
     download = true;
     if (!Platform.isWindows) {
+      Logger.root.info('Requesting storage permission');
       PermissionStatus status = await Permission.storage.status;
       if (status.isDenied) {
+        Logger.root.info('Request denied');
         await [
           Permission.storage,
           Permission.accessMediaLocation,
@@ -88,6 +90,7 @@ class Download with ChangeNotifier {
       }
       status = await Permission.storage.status;
       if (status.isPermanentlyDenied) {
+        Logger.root.info('Request permanently denied');
         await openAppSettings();
       }
     }
@@ -107,6 +110,7 @@ class Download with ChangeNotifier {
     // String filename = '${data["title"]} - ${data["artist"]}';
     String dlPath =
         Hive.box('settings').get('downloadPath', defaultValue: '') as String;
+    Logger.root.info('Cached Download path: $dlPath');
     if (filename.length > 200) {
       final String temp = filename.substring(0, 200);
       final List tempList = temp.split(', ');
@@ -116,13 +120,19 @@ class Download with ChangeNotifier {
 
     filename = '${filename.replaceAll(avoid, "").replaceAll("  ", " ")}.m4a';
     if (dlPath == '') {
-      final String? temp =
-          await ExtStorageProvider.getExtStorage(dirName: 'Music');
+      Logger.root.info('Cached Download path is empty, getting new path');
+      final String? temp = await ExtStorageProvider.getExtStorage(
+        dirName: 'Music',
+        writeAccess: true,
+      );
       dlPath = temp!;
     }
+    Logger.root.info('New Download path: $dlPath');
     if (data['url'].toString().contains('google') && createYoutubeFolder) {
+      Logger.root.info('Youtube audio detected, creating Youtube folder');
       dlPath = '$dlPath/YouTube';
       if (!await Directory(dlPath).exists()) {
+        Logger.root.info('Creating Youtube folder');
         await Directory(dlPath).create();
       }
     }
@@ -131,12 +141,14 @@ class Download with ChangeNotifier {
       final String foldername = folderName.replaceAll(avoid, '');
       dlPath = '$dlPath/$foldername';
       if (!await Directory(dlPath).exists()) {
+        Logger.root.info('Creating folder $foldername');
         await Directory(dlPath).create();
       }
     }
 
     final bool exists = await File('$dlPath/$filename').exists();
     if (exists) {
+      Logger.root.info('File already exists');
       if (remember.value == true && rememberOption != null) {
         switch (rememberOption) {
           case 0:
@@ -296,6 +308,7 @@ class Download with ChangeNotifier {
     String fileName,
     Map data,
   ) async {
+    Logger.root.info('processing download');
     progress = null;
     notifyListeners();
     String? filepath;
@@ -305,6 +318,7 @@ class Download with ChangeNotifier {
     String lyrics;
     final artname = fileName.replaceAll('.m4a', '.jpg');
     if (!Platform.isWindows) {
+      Logger.root.info('Getting App Path for storing image');
       appPath = Hive.box('settings').get('tempDirPath')?.toString();
       appPath ??= (await getTemporaryDirectory()).path;
     } else {
@@ -313,31 +327,35 @@ class Download with ChangeNotifier {
     }
 
     try {
+      Logger.root.info('Creating audio file $dlPath/$fileName');
       await File('$dlPath/$fileName')
           .create(recursive: true)
           .then((value) => filepath = value.path);
-      // print('created audio file');
-
+      Logger.root.info('Creating image file $appPath/$artname');
       await File('$appPath/$artname')
           .create(recursive: true)
           .then((value) => filepath2 = value.path);
     } catch (e) {
+      Logger.root
+          .info('Error creating files, requesting additional permission');
       await [
         Permission.manageExternalStorage,
       ].request();
+
+      Logger.root.info('Retrying to create audio file');
       await File('$dlPath/$fileName')
           .create(recursive: true)
           .then((value) => filepath = value.path);
-      // print('created audio file');
+
+      Logger.root.info('Retrying to create image file');
       await File('$appPath/$artname')
           .create(recursive: true)
           .then((value) => filepath2 = value.path);
     }
-    // debugPrint('Audio path $filepath');
-    // debugPrint('Image path $filepath2');
     String kUrl = data['url'].toString();
 
     if (data['url'].toString().contains('google')) {
+      Logger.root.info('Fetching youtube download url with preferred quality');
       // filename = filename.replaceAll('.m4a', '.opus');
 
       kUrl = preferredYtDownloadQuality == 'High'
@@ -346,20 +364,22 @@ class Download with ChangeNotifier {
       if (kUrl == 'null') {
         kUrl = data['url'].toString();
       }
-      log("low quality is ${data['lowUrl']}");
-      log("high quality is ${data['highUrl']}");
     } else {
+      Logger.root.info('Fetching jiosaavn download url with preferred quality');
       kUrl = kUrl.replaceAll(
         '_96.',
         "_${preferredDownloadQuality.replaceAll(' kbps', '')}.",
       );
     }
 
+    Logger.root.info('Connecting to Client');
     final client = Client();
     final response = await client.send(Request('GET', Uri.parse(kUrl)));
     final int total = response.contentLength ?? 0;
     int recieved = 0;
+    Logger.root.info('Client connected, Starting download');
     response.stream.asBroadcastStream();
+    Logger.root.info('broadcasting download state');
     response.stream.listen((value) {
       bytes.addAll(value);
       try {
@@ -371,10 +391,10 @@ class Download with ChangeNotifier {
         }
       } catch (e) {
         Logger.root.severe('Error in download: $e');
-        // print('Error: $e');
       }
     }).onDone(() async {
       if (download) {
+        Logger.root.info('Download complete, modifying file');
         final file = File(filepath!);
         await file.writeAsBytes(bytes);
 
@@ -387,6 +407,7 @@ class Download with ChangeNotifier {
 
         await file2.writeAsBytes(bytes2);
         try {
+          Logger.root.info('Checking if lyrics required');
           lyrics = downloadLyrics
               ? await Lyrics.getLyrics(
                   id: data['id'].toString(),
@@ -397,7 +418,6 @@ class Download with ChangeNotifier {
               : '';
         } catch (e) {
           Logger.root.severe('Error fetching lyrics: $e');
-          // log('Error fetching lyrics: $e');
           lyrics = '';
         }
         // commented out not to use FFmpeg as it increases the size of the app
@@ -436,8 +456,7 @@ class Download with ChangeNotifier {
         //   // await File(filepath!).delete();
         //   // filepath = filepath!.replaceAll('.m4a', '.$downloadFormat');
         // }
-
-        // debugPrint('Started tag editing');
+        Logger.root.info('Getting audio tags');
         final Tag tag = Tag(
           title: data['title'].toString(),
           artist: data['artist'].toString(),
@@ -452,6 +471,7 @@ class Download with ChangeNotifier {
         );
         if (Platform.isAndroid) {
           try {
+            Logger.root.info('Started tag editing');
             final tagger = Audiotagger();
             await tagger.writeTags(
               path: filepath!,
@@ -464,15 +484,15 @@ class Download with ChangeNotifier {
             // });
           } catch (e) {
             Logger.root.severe('Error editing tags: $e');
-            log('Failed to edit tags');
           }
         }
+        Logger.root.info('Closing connection & notifying listeners');
         client.close();
-        // debugPrint('Done');
         lastDownloadId = data['id'].toString();
         progress = 0.0;
         notifyListeners();
 
+        Logger.root.info('Putting data to downloads database');
         final songData = {
           'id': data['id'].toString(),
           'title': data['title'].toString(),
@@ -497,9 +517,10 @@ class Download with ChangeNotifier {
         };
         Hive.box('downloads').put(songData['id'].toString(), songData);
 
+        Logger.root.info('Everything done, showing snackbar');
         ShowSnackBar().showSnackBar(
           context,
-          '"${data['title'].toString()}" ${AppLocalizations.of(context)!.downed}',
+          '"${data['title']}" ${AppLocalizations.of(context)!.downed}',
         );
       } else {
         download = true;

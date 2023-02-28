@@ -29,8 +29,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-// import 'package:html_unescape/html_unescape_small.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import '../../Helpers/spotify_helper.dart';
 
 List localSongs = [];
 List globalSongs = [];
@@ -82,7 +83,7 @@ class _TopChartsState extends State<TopCharts>
                 child: Text(
                   AppLocalizations.of(context)!.local,
                   style: TextStyle(
-                    color: Theme.of(context).textTheme.bodyText1!.color,
+                    color: Theme.of(context).textTheme.bodyLarge!.color,
                   ),
                 ),
               ),
@@ -90,7 +91,7 @@ class _TopChartsState extends State<TopCharts>
                 child: Text(
                   AppLocalizations.of(context)!.global,
                   style: TextStyle(
-                    color: Theme.of(context).textTheme.bodyText1!.color,
+                    color: Theme.of(context).textTheme.bodyLarge!.color,
                   ),
                 ),
               ),
@@ -100,7 +101,7 @@ class _TopChartsState extends State<TopCharts>
             AppLocalizations.of(context)!.spotifyCharts,
             style: TextStyle(
               fontSize: 18,
-              color: Theme.of(context).textTheme.bodyText1!.color,
+              color: Theme.of(context).textTheme.bodyLarge!.color,
             ),
           ),
           centerTitle: true,
@@ -190,21 +191,14 @@ Future<List> getChartDetails(String accessToken, String type) async {
 }
 
 Future<void> scrapData(String type, {bool signIn = false}) async {
-  String code;
-  String accessToken = Hive.box('settings')
-      .get('spotifyAccessToken', defaultValue: 'null')
-      .toString();
-  String refreshToken = Hive.box('settings')
-      .get('spotifyRefreshToken', defaultValue: 'null')
-      .toString();
   final bool spotifySigned =
       Hive.box('settings').get('spotifySigned', defaultValue: false) as bool;
 
   if (!spotifySigned && !signIn) {
     return;
   }
-
-  if (accessToken == 'null' || refreshToken == 'null') {
+  final String? accessToken = await retriveAccessToken();
+  if (accessToken == null) {
     launchUrl(
       Uri.parse(
         SpotifyApi().requestAuthorization(),
@@ -215,7 +209,7 @@ Future<void> scrapData(String type, {bool signIn = false}) async {
       onAppLink: (Uri uri, String link) async {
         closeInAppWebView();
         if (link.contains('code=')) {
-          code = link.split('code=')[1];
+          final code = link.split('code=')[1];
           Hive.box('settings').put('spotifyAppCode', code);
           final currentTime = DateTime.now().millisecondsSinceEpoch / 1000;
           final List<String> data =
@@ -227,6 +221,7 @@ Future<void> scrapData(String type, {bool signIn = false}) async {
             Hive.box('settings')
                 .put('spotifyTokenExpireAt', currentTime + int.parse(data[2]));
           }
+
           final temp = await getChartDetails(data[0], type);
           if (temp.isNotEmpty) {
             Hive.box('cache').put('${type}_chart', temp);
@@ -245,25 +240,6 @@ Future<void> scrapData(String type, {bool signIn = false}) async {
       },
     );
   } else {
-    final double expiredAt = Hive.box('settings')
-        .get('spotifyTokenExpireAt', defaultValue: 0) as double;
-    final currentTime = DateTime.now().millisecondsSinceEpoch / 1000;
-    if ((currentTime + 60) >= expiredAt) {
-      final List<String> data =
-          await SpotifyApi().getAccessToken(refreshToken: refreshToken);
-      if (data.isNotEmpty) {
-        Hive.box('settings').put('spotifySigned', true);
-        accessToken = data[0];
-        Hive.box('settings').put('spotifyAccessToken', data[0]);
-        if (data[1] != 'null') {
-          refreshToken = data[1];
-          Hive.box('settings').put('spotifyRefreshToken', data[1]);
-        }
-        Hive.box('settings')
-            .put('spotifyTokenExpireAt', currentTime + int.parse(data[2]));
-      }
-    }
-
     final temp = await getChartDetails(accessToken, type);
     if (temp.isNotEmpty) {
       Hive.box('cache').put('${type}_chart', temp);
@@ -371,6 +347,7 @@ class _TopPageState extends State<TopPage>
                   itemBuilder: (context, index) {
                     return ListTile(
                       leading: Card(
+                        margin: EdgeInsets.zero,
                         elevation: 5,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(7.0),
@@ -416,7 +393,9 @@ class _TopPageState extends State<TopPage>
                         onSelected: (int? value) async {
                           if (value == 0) {
                             await launchUrl(
-                              Uri.parse(showList[index]['url'].toString()),
+                              Uri.parse(
+                                showList[index]['spotifyUrl'].toString(),
+                              ),
                               mode: LaunchMode.externalApplication,
                             );
                           }

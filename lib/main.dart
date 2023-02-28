@@ -44,8 +44,11 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get_it/get_it.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
+
+import 'Helpers/import_export_playlist.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -58,8 +61,10 @@ Future<void> main() async {
   }
   await openHiveBox('settings');
   await openHiveBox('downloads');
+  await openHiveBox('stats');
   await openHiveBox('Favorite Songs');
   await openHiveBox('cache', limit: true);
+  await openHiveBox('ytlinkcache', limit: true);
   if (Platform.isAndroid) {
     setOptimalDisplayMode();
   }
@@ -88,26 +93,26 @@ Future<void> setOptimalDisplayMode() async {
 }
 
 Future<void> startService() async {
+  await initializeLogging();
   final AudioPlayerHandler audioHandler = await AudioService.init(
     builder: () => AudioPlayerHandlerImpl(),
     config: AudioServiceConfig(
       androidNotificationChannelId: 'com.shadow.blackhole.channel.audio',
       androidNotificationChannelName: 'BlackHole',
-      androidNotificationOngoing: true,
       androidNotificationIcon: 'drawable/ic_stat_music_note',
       androidShowNotificationBadge: true,
-      // androidStopForegroundOnPause: Hive.box('settings')
-      // .get('stopServiceOnPause', defaultValue: true) as bool,
+      androidStopForegroundOnPause: false,
+      // Hive.box('settings').get('stopServiceOnPause', defaultValue: true) as bool,
       notificationColor: Colors.grey[900],
     ),
   );
-  initializeLogging();
   GetIt.I.registerSingleton<AudioPlayerHandler>(audioHandler);
   GetIt.I.registerSingleton<MyTheme>(MyTheme());
 }
 
 Future<void> openHiveBox(String boxName, {bool limit = false}) async {
   final box = await Hive.openBox(boxName).onError((error, stackTrace) async {
+    Logger.root.severe('Failed to open $boxName Box', error, stackTrace);
     final Directory dir = await getApplicationDocumentsDirectory();
     final String dirPath = dir.path;
     File dbFile = File('$dirPath/$boxName.hive');
@@ -137,11 +142,13 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   Locale _locale = const Locale('en', '');
+  late StreamSubscription _intentTextStreamSubscription;
   late StreamSubscription _intentDataStreamSubscription;
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   void dispose() {
+    _intentTextStreamSubscription.cancel();
     _intentDataStreamSubscription.cancel();
     super.dispose();
   }
@@ -163,21 +170,75 @@ class _MyAppState extends State<MyApp> {
     });
 
     // For sharing or opening urls/text coming from outside the app while the app is in the memory
-    _intentDataStreamSubscription = ReceiveSharingIntent.getTextStream().listen(
+    _intentTextStreamSubscription = ReceiveSharingIntent.getTextStream().listen(
       (String value) {
+        Logger.root.info('Received intent on stream: $value');
         handleSharedText(value, navigatorKey);
       },
       onError: (err) {
-        // print("ERROR in getTextStream: $err");
+        Logger.root.severe('ERROR in getTextStream', err);
       },
     );
 
     // For sharing or opening urls/text coming from outside the app while the app is closed
     ReceiveSharingIntent.getInitialText().then(
       (String? value) {
+        Logger.root.info('Received Intent initially: $value');
         if (value != null) handleSharedText(value, navigatorKey);
       },
+      onError: (err) {
+        Logger.root.severe('ERROR in getInitialTextStream', err);
+      },
     );
+
+    // For sharing files coming from outside the app while the app is in the memory
+    _intentDataStreamSubscription =
+        ReceiveSharingIntent.getMediaStream().listen(
+      (List<SharedMediaFile> value) {
+        if (value.isNotEmpty) {
+          for (final file in value) {
+            if (file.path.endsWith('.json')) {
+              final List playlistNames = Hive.box('settings')
+                      .get('playlistNames')
+                      ?.toList() as List? ??
+                  ['Favorite Songs'];
+              importFilePlaylist(
+                null,
+                playlistNames,
+                path: file.path,
+                pickFile: false,
+              ).then(
+                (value) => navigatorKey.currentState?.pushNamed('/playlists'),
+              );
+            }
+          }
+        }
+      },
+      onError: (err) {
+        Logger.root.severe('ERROR in getDataStream', err);
+      },
+    );
+
+    // For sharing files coming from outside the app while the app is closed
+    ReceiveSharingIntent.getInitialMedia().then((List<SharedMediaFile> value) {
+      if (value.isNotEmpty) {
+        for (final file in value) {
+          if (file.path.endsWith('.json')) {
+            final List playlistNames =
+                Hive.box('settings').get('playlistNames')?.toList() as List? ??
+                    ['Favorite Songs'];
+            importFilePlaylist(
+              null,
+              playlistNames,
+              path: file.path,
+              pickFile: false,
+            ).then(
+              (value) => navigatorKey.currentState?.pushNamed('/playlists'),
+            );
+          }
+        }
+      }
+    });
   }
 
   void setLocale(Locale value) {

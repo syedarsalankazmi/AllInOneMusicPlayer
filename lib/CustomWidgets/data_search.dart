@@ -74,20 +74,14 @@ class DataSearch extends SearchDelegate {
         ? data
         : [
             ...{
-              ...data
-                  .where(
-                    (element) => element.title
-                        .toLowerCase()
-                        .contains(query.toLowerCase()),
-                  )
-                  .toList(),
-              ...data
-                  .where(
-                    (element) => element.artist!
-                        .toLowerCase()
-                        .contains(query.toLowerCase()),
-                  )
-                  .toList(),
+              ...data.where(
+                (element) =>
+                    element.title.toLowerCase().contains(query.toLowerCase()),
+              ),
+              ...data.where(
+                (element) =>
+                    element.artist!.toLowerCase().contains(query.toLowerCase()),
+              ),
             }
           ];
     return ListView.builder(
@@ -133,20 +127,14 @@ class DataSearch extends SearchDelegate {
         ? data
         : [
             ...{
-              ...data
-                  .where(
-                    (element) => element.title
-                        .toLowerCase()
-                        .contains(query.toLowerCase()),
-                  )
-                  .toList(),
-              ...data
-                  .where(
-                    (element) => element.artist!
-                        .toLowerCase()
-                        .contains(query.toLowerCase()),
-                  )
-                  .toList(),
+              ...data.where(
+                (element) =>
+                    element.title.toLowerCase().contains(query.toLowerCase()),
+              ),
+              ...data.where(
+                (element) =>
+                    element.artist!.toLowerCase().contains(query.toLowerCase()),
+              ),
             }
           ];
     return ListView.builder(
@@ -196,7 +184,7 @@ class DataSearch extends SearchDelegate {
       hintColor: Colors.white70,
       primaryIconTheme: theme.primaryIconTheme.copyWith(color: Colors.white),
       textTheme: theme.textTheme.copyWith(
-        headline6:
+        titleLarge:
             const TextStyle(fontWeight: FontWeight.normal, color: Colors.white),
       ),
       inputDecorationTheme:
@@ -250,22 +238,18 @@ class DownloadsSearch extends SearchDelegate {
         ? data
         : [
             ...{
-              ...data
-                  .where(
-                    (element) => element['title']
-                        .toString()
-                        .toLowerCase()
-                        .contains(query.toLowerCase()),
-                  )
-                  .toList(),
-              ...data
-                  .where(
-                    (element) => element['artist']
-                        .toString()
-                        .toLowerCase()
-                        .contains(query.toLowerCase()),
-                  )
-                  .toList(),
+              ...data.where(
+                (element) => element['title']
+                    .toString()
+                    .toLowerCase()
+                    .contains(query.toLowerCase()),
+              ),
+              ...data.where(
+                (element) => element['artist']
+                    .toString()
+                    .toLowerCase()
+                    .contains(query.toLowerCase()),
+              ),
             }
           ];
     return ListView.builder(
@@ -350,22 +334,18 @@ class DownloadsSearch extends SearchDelegate {
         ? data
         : [
             ...{
-              ...data
-                  .where(
-                    (element) => element['title']
-                        .toString()
-                        .toLowerCase()
-                        .contains(query.toLowerCase()),
-                  )
-                  .toList(),
-              ...data
-                  .where(
-                    (element) => element['artist']
-                        .toString()
-                        .toLowerCase()
-                        .contains(query.toLowerCase()),
-                  )
-                  .toList(),
+              ...data.where(
+                (element) => element['title']
+                    .toString()
+                    .toLowerCase()
+                    .contains(query.toLowerCase()),
+              ),
+              ...data.where(
+                (element) => element['artist']
+                    .toString()
+                    .toLowerCase()
+                    .contains(query.toLowerCase()),
+              ),
             }
           ];
     return ListView.builder(
@@ -439,7 +419,7 @@ class DownloadsSearch extends SearchDelegate {
       hintColor: Colors.white70,
       primaryIconTheme: theme.primaryIconTheme.copyWith(color: Colors.white),
       textTheme: theme.textTheme.copyWith(
-        headline6:
+        titleLarge:
             const TextStyle(fontWeight: FontWeight.normal, color: Colors.white),
       ),
       inputDecorationTheme:

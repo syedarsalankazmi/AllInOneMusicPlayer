@@ -23,6 +23,8 @@ import 'package:all_in_one_music_player/CustomWidgets/song_tile_trailing_menu.da
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../Helpers/image_resolution_modifier.dart';
+
 class HorizontalAlbumsList extends StatelessWidget {
   final List songsList;
   final Function(int) onTap;
@@ -110,11 +112,7 @@ class HorizontalAlbumsList extends StatelessWidget {
                           fit: BoxFit.cover,
                           image: AssetImage('assets/cover.jpg'),
                         ),
-                        imageUrl: item['image']
-                            .toString()
-                            .replaceAll('http:', 'https:')
-                            .replaceAll('50x50', '500x500')
-                            .replaceAll('150x150', '500x500'),
+                        imageUrl: getImageUrl(item['image'].toString()),
                         placeholder: (context, url) => Image(
                           fit: BoxFit.cover,
                           image: (item['type'] == 'playlist' ||
@@ -160,11 +158,7 @@ class HorizontalAlbumsList extends StatelessWidget {
                       fit: BoxFit.cover,
                       image: AssetImage('assets/cover.jpg'),
                     ),
-                    imageUrl: item['image']
-                        .toString()
-                        .replaceAll('http:', 'https:')
-                        .replaceAll('50x50', '500x500')
-                        .replaceAll('150x150', '500x500'),
+                    imageUrl: getImageUrl(item['image'].toString()),
                     placeholder: (context, url) => Image(
                       fit: BoxFit.cover,
                       image: (item['type'] == 'playlist' ||
@@ -277,7 +271,7 @@ class HorizontalAlbumsList extends StatelessWidget {
                                     fontSize: 11,
                                     color: Theme.of(context)
                                         .textTheme
-                                        .caption!
+                                        .bodySmall!
                                         .color,
                                   ),
                                 )

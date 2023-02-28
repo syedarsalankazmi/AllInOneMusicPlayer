@@ -37,6 +37,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:hive/hive.dart';
 
+import '../../CustomWidgets/horizontal_albumlist_separated.dart';
+import '../../Helpers/image_resolution_modifier.dart';
+
 bool fetched = false;
 List preferredLanguage = Hive.box('settings')
     .get('preferredLanguage', defaultValue: ['English']) as List;
@@ -91,7 +94,7 @@ class _SaavnHomePageState extends State<SaavnHomePage>
       case 'charts':
         return '';
       case 'radio_station':
-        return 'Radio • ${item['subtitle']?.toString().unescape()}';
+        return 'Radio • ${(item['subtitle']?.toString() ?? '').isEmpty ? 'JioSaavn' : item['subtitle']?.toString().unescape()}';
       case 'playlist':
         return 'Playlist • ${(item['subtitle']?.toString() ?? '').isEmpty ? 'JioSaavn' : item['subtitle'].toString().unescape()}';
       case 'song':
@@ -137,7 +140,7 @@ class _SaavnHomePageState extends State<SaavnHomePage>
             ? MediaQuery.of(context).size.width / 2
             : MediaQuery.of(context).size.height / 2.5;
     if (boxSize > 250) boxSize = 250;
-    if (recentList.length < playlistNames.length) {
+    if (playlistNames.length >= 3) {
       recentIndex = 0;
       playlistIndex = 1;
     } else {
@@ -178,7 +181,7 @@ class _SaavnHomePageState extends State<SaavnHomePage>
                               ),
                             ],
                           ),
-                          HorizontalAlbumsList(
+                          HorizontalAlbumsListSeparated(
                             songsList: recentList,
                             onTap: (int idx) {
                               PlayerInvoke.init(
@@ -343,7 +346,7 @@ class _SaavnHomePageState extends State<SaavnHomePage>
                                                           color:
                                                               Theme.of(context)
                                                                   .textTheme
-                                                                  .caption!
+                                                                  .bodySmall!
                                                                   .color,
                                                         ),
                                                       )
@@ -517,20 +520,9 @@ class _SaavnHomePageState extends State<SaavnHomePage>
                                                       'assets/cover.jpg',
                                                     ),
                                                   ),
-                                                  imageUrl: item['image']
-                                                      .toString()
-                                                      .replaceAll(
-                                                        'http:',
-                                                        'https:',
-                                                      )
-                                                      .replaceAll(
-                                                        '50x50',
-                                                        '500x500',
-                                                      )
-                                                      .replaceAll(
-                                                        '150x150',
-                                                        '500x500',
-                                                      ),
+                                                  imageUrl: getImageUrl(
+                                                    item['image'].toString(),
+                                                  ),
                                                   placeholder: (context, url) =>
                                                       Image(
                                                     fit: BoxFit.cover,
@@ -652,20 +644,9 @@ class _SaavnHomePageState extends State<SaavnHomePage>
                                             'assets/cover.jpg',
                                           ),
                                         ),
-                                        imageUrl: item['image']
-                                            .toString()
-                                            .replaceAll(
-                                              'http:',
-                                              'https:',
-                                            )
-                                            .replaceAll(
-                                              '50x50',
-                                              '500x500',
-                                            )
-                                            .replaceAll(
-                                              '150x150',
-                                              '500x500',
-                                            ),
+                                        imageUrl: getImageUrl(
+                                          item['image'].toString(),
+                                        ),
                                         placeholder: (context, url) => Image(
                                           fit: BoxFit.cover,
                                           image: (item['type'] == 'playlist' ||
@@ -853,7 +834,7 @@ class _SaavnHomePageState extends State<SaavnHomePage>
                                                         fontSize: 11,
                                                         color: Theme.of(context)
                                                             .textTheme
-                                                            .caption!
+                                                            .bodySmall!
                                                             .color,
                                                       ),
                                                     )

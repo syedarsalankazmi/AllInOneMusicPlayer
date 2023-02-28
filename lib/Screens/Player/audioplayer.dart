@@ -324,7 +324,7 @@ class _PlayScreenState extends State<PlayScreen> {
                                               fontWeight: FontWeight.w600,
                                               color: Theme.of(context)
                                                   .textTheme
-                                                  .bodyText1!
+                                                  .bodyLarge!
                                                   .color,
                                             ),
                                           ),
@@ -1206,12 +1206,6 @@ class NowPlayingStream extends StatelessWidget {
                   ),
                   onTap: () {
                     audioHandler.skipToQueueItem(index);
-                    _updateScrollController(
-                      scrollController,
-                      queueState.queueIndex ?? 0,
-                      queuePosition.toInt(),
-                      queue.length,
-                    );
                   },
                 ),
               ),
@@ -1247,6 +1241,7 @@ class ArtWorkWidget extends StatefulWidget {
 class _ArtWorkWidgetState extends State<ArtWorkWidget> {
   final ValueNotifier<bool> dragging = ValueNotifier<bool>(false);
   final ValueNotifier<bool> tapped = ValueNotifier<bool>(false);
+  final ValueNotifier<int> doubletapped = ValueNotifier<int>(0);
   final ValueNotifier<bool> done = ValueNotifier<bool>(false);
   Map lyrics = {'id': '', 'lyrics': ''};
 
@@ -1398,85 +1393,100 @@ class _ArtWorkWidgetState extends State<ArtWorkWidget> {
 
               final bool enabled = Hive.box('settings')
                   .get('enableGesture', defaultValue: true) as bool;
-              return Stack(
-                children: [
-                  GestureDetector(
-                    onTap: !enabled
-                        ? null
-                        : () {
-                            tapped.value = true;
-                            Future.delayed(const Duration(seconds: 2),
-                                () async {
-                              tapped.value = false;
-                            });
-                          },
-                    onDoubleTap: !enabled
-                        ? null
-                        : () {
-                            Feedback.forLongPress(context);
-                            widget.cardKey.currentState!.toggleCard();
-                          },
-                    onHorizontalDragEnd: !enabled
-                        ? null
-                        : (DragEndDetails details) {
-                            if ((details.primaryVelocity ?? 0) > 100) {
-                              if (queueState.hasPrevious) {
-                                widget.audioHandler.skipToPrevious();
-                              }
-                            }
+              return GestureDetector(
+                onTap: !enabled
+                    ? null
+                    : () {
+                        tapped.value = true;
+                        Future.delayed(const Duration(seconds: 2), () async {
+                          tapped.value = false;
+                        });
+                      },
+                onDoubleTapDown: (details) {
+                  if (details.globalPosition.dx <= widget.width * 2 / 5) {
+                    widget.audioHandler.customAction('rewind');
+                    doubletapped.value = -1;
+                    Future.delayed(const Duration(milliseconds: 500), () async {
+                      doubletapped.value = 0;
+                    });
+                  }
+                  if (details.globalPosition.dx > widget.width * 2 / 5 &&
+                      details.globalPosition.dx < widget.width * 3 / 5) {
+                    widget.cardKey.currentState!.toggleCard();
+                  }
+                  if (details.globalPosition.dx >= widget.width * 3 / 5) {
+                    widget.audioHandler.customAction('fastForward');
+                    doubletapped.value = 1;
+                    Future.delayed(const Duration(milliseconds: 500), () async {
+                      doubletapped.value = 0;
+                    });
+                  }
+                },
+                onDoubleTap: !enabled
+                    ? null
+                    : () {
+                        Feedback.forLongPress(context);
+                      },
+                onHorizontalDragEnd: !enabled
+                    ? null
+                    : (DragEndDetails details) {
+                        if ((details.primaryVelocity ?? 0) > 100) {
+                          if (queueState.hasPrevious) {
+                            widget.audioHandler.skipToPrevious();
+                          }
+                        }
 
-                            if ((details.primaryVelocity ?? 0) < -100) {
-                              if (queueState.hasNext) {
-                                widget.audioHandler.skipToNext();
-                              }
-                            }
-                          },
-                    onLongPress: !enabled
-                        ? null
-                        : () {
-                            if (!widget.offline) {
-                              Feedback.forLongPress(context);
-                              AddToPlaylist()
-                                  .addToPlaylist(context, widget.mediaItem);
-                            }
-                          },
-                    onVerticalDragStart: !enabled
-                        ? null
-                        : (_) {
-                            dragging.value = true;
-                          },
-                    onVerticalDragEnd: !enabled
-                        ? null
-                        : (_) {
-                            dragging.value = false;
-                          },
-                    onVerticalDragUpdate: !enabled
-                        ? null
-                        : (DragUpdateDetails details) {
-                            if (details.delta.dy != 0.0) {
-                              double volume = widget.audioHandler.volume.value;
-                              volume -= details.delta.dy / 150;
-                              if (volume < 0) {
-                                volume = 0;
-                              }
-                              if (volume > 1.0) {
-                                volume = 1.0;
-                              }
-                              widget.audioHandler.setVolume(volume);
-                            }
-                          },
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Card(
-                          elevation: 10.0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15.0),
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: widget.mediaItem.artUri
-                                  .toString()
-                                  .startsWith('file')
+                        if ((details.primaryVelocity ?? 0) < -100) {
+                          if (queueState.hasNext) {
+                            widget.audioHandler.skipToNext();
+                          }
+                        }
+                      },
+                onLongPress: !enabled
+                    ? null
+                    : () {
+                        if (!widget.offline) {
+                          Feedback.forLongPress(context);
+                          AddToPlaylist()
+                              .addToPlaylist(context, widget.mediaItem);
+                        }
+                      },
+                onVerticalDragStart: !enabled
+                    ? null
+                    : (_) {
+                        dragging.value = true;
+                      },
+                onVerticalDragEnd: !enabled
+                    ? null
+                    : (_) {
+                        dragging.value = false;
+                      },
+                onVerticalDragUpdate: !enabled
+                    ? null
+                    : (DragUpdateDetails details) {
+                        if (details.delta.dy != 0.0) {
+                          double volume = widget.audioHandler.volume.value;
+                          volume -= details.delta.dy / 150;
+                          if (volume < 0) {
+                            volume = 0;
+                          }
+                          if (volume > 1.0) {
+                            volume = 1.0;
+                          }
+                          widget.audioHandler.setVolume(volume);
+                        }
+                      },
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Card(
+                      elevation: 10.0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15.0),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child:
+                          widget.mediaItem.artUri.toString().startsWith('file')
                               ? Image(
                                   fit: BoxFit.contain,
                                   width: widget.width * 0.85,
@@ -1512,250 +1522,316 @@ class _ArtWorkWidgetState extends State<ArtWorkWidget> {
                                   imageUrl: widget.mediaItem.artUri.toString(),
                                   width: widget.width * 0.85,
                                 ),
-                        ),
-                        ValueListenableBuilder(
-                          valueListenable: dragging,
-                          child: StreamBuilder<double>(
-                            stream: widget.audioHandler.volume,
-                            builder: (context, snapshot) {
-                              final double volumeValue = snapshot.data ?? 1.0;
-                              return Center(
-                                child: SizedBox(
-                                  width: 60.0,
-                                  height: widget.width * 0.7,
-                                  child: Card(
-                                    color: Colors.black87,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10.0),
-                                    ),
-                                    clipBehavior: Clip.antiAlias,
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Expanded(
-                                          child: FittedBox(
-                                            fit: BoxFit.fitHeight,
-                                            child: RotatedBox(
-                                              quarterTurns: -1,
-                                              child: SliderTheme(
-                                                data: SliderTheme.of(context)
-                                                    .copyWith(
-                                                  thumbShape:
-                                                      HiddenThumbComponentShape(),
-                                                  activeTrackColor:
-                                                      Theme.of(context)
-                                                          .colorScheme
-                                                          .secondary,
-                                                  inactiveTrackColor:
-                                                      Theme.of(context)
-                                                          .colorScheme
-                                                          .secondary
-                                                          .withOpacity(0.4),
-                                                  trackShape:
-                                                      const RoundedRectSliderTrackShape(),
-                                                ),
-                                                child: ExcludeSemantics(
-                                                  child: Slider(
-                                                    value: widget.audioHandler
-                                                        .volume.value,
-                                                    onChanged: (_) {},
-                                                  ),
-                                                ),
+                    ),
+                    ValueListenableBuilder(
+                      valueListenable: dragging,
+                      child: StreamBuilder<double>(
+                        stream: widget.audioHandler.volume,
+                        builder: (context, snapshot) {
+                          final double volumeValue = snapshot.data ?? 1.0;
+                          return Center(
+                            child: SizedBox(
+                              width: 60.0,
+                              height: widget.width * 0.7,
+                              child: Card(
+                                color: Colors.black87,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10.0),
+                                ),
+                                clipBehavior: Clip.antiAlias,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Expanded(
+                                      child: FittedBox(
+                                        fit: BoxFit.fitHeight,
+                                        child: RotatedBox(
+                                          quarterTurns: -1,
+                                          child: SliderTheme(
+                                            data: SliderTheme.of(context)
+                                                .copyWith(
+                                              thumbShape:
+                                                  HiddenThumbComponentShape(),
+                                              activeTrackColor:
+                                                  Theme.of(context)
+                                                      .colorScheme
+                                                      .secondary,
+                                              inactiveTrackColor:
+                                                  Theme.of(context)
+                                                      .colorScheme
+                                                      .secondary
+                                                      .withOpacity(0.4),
+                                              trackShape:
+                                                  const RoundedRectSliderTrackShape(),
+                                            ),
+                                            child: ExcludeSemantics(
+                                              child: Slider(
+                                                value: widget
+                                                    .audioHandler.volume.value,
+                                                onChanged: (_) {},
                                               ),
                                             ),
                                           ),
                                         ),
-                                        Padding(
-                                          padding: const EdgeInsets.only(
-                                            bottom: 20.0,
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: 20.0,
+                                      ),
+                                      child: Icon(
+                                        volumeValue == 0
+                                            ? Icons.volume_off_rounded
+                                            : volumeValue > 0.6
+                                                ? Icons.volume_up_rounded
+                                                : Icons.volume_down_rounded,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      builder: (
+                        BuildContext context,
+                        bool value,
+                        Widget? child,
+                      ) {
+                        return Visibility(
+                          visible: value,
+                          child: child!,
+                        );
+                      },
+                    ),
+                    ValueListenableBuilder(
+                      valueListenable: doubletapped,
+                      child: const Icon(
+                        Icons.forward_10_rounded,
+                        size: 60.0,
+                      ),
+                      builder: (
+                        BuildContext context,
+                        int value,
+                        Widget? child,
+                      ) {
+                        return Visibility(
+                          visible: value != 0,
+                          child: Card(
+                            color: Colors.transparent,
+                            elevation: 0.0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15.0),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: SizedBox.expand(
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: value == 1
+                                        ? [
+                                            Colors.transparent,
+                                            Colors.black.withOpacity(0.4),
+                                            Colors.black.withOpacity(0.7),
+                                          ]
+                                        : [
+                                            Colors.black.withOpacity(0.7),
+                                            Colors.black.withOpacity(0.4),
+                                            Colors.transparent,
+                                          ],
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    Visibility(
+                                      visible: value == -1,
+                                      child: const Icon(
+                                        Icons.replay_10_rounded,
+                                        size: 60.0,
+                                      ),
+                                    ),
+                                    const SizedBox(),
+                                    Visibility(
+                                      visible: value == 1,
+                                      child: child!,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    ValueListenableBuilder(
+                      valueListenable: tapped,
+                      child: GestureDetector(
+                        onTap: () {
+                          tapped.value = false;
+                        },
+                        child: Card(
+                          color: Colors.black26,
+                          elevation: 0.0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15.0),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: RadialGradient(
+                                colors: [
+                                  Colors.black.withOpacity(0.4),
+                                  Colors.black.withOpacity(0.7),
+                                ],
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                Align(
+                                  alignment: Alignment.topRight,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(10.0),
+                                    child: IconButton(
+                                      tooltip: AppLocalizations.of(context)!
+                                          .songInfo,
+                                      onPressed: () {
+                                        final Map details =
+                                            MediaItemConverter.mediaItemToMap(
+                                          widget.mediaItem,
+                                        );
+                                        details['duration'] =
+                                            '${int.parse(details["duration"].toString()) ~/ 60}:${int.parse(details["duration"].toString()) % 60}';
+                                        // style: Theme.of(context).textTheme.caption,
+                                        if (widget.mediaItem.extras?['size'] !=
+                                            null) {
+                                          details.addEntries([
+                                            MapEntry(
+                                              'date_modified',
+                                              DateTime
+                                                  .fromMillisecondsSinceEpoch(
+                                                int.parse(
+                                                      widget
+                                                          .mediaItem
+                                                          .extras![
+                                                              'date_modified']
+                                                          .toString(),
+                                                    ) *
+                                                    1000,
+                                              ).toString().split('.').first,
+                                            ),
+                                            MapEntry(
+                                              'size',
+                                              '${((widget.mediaItem.extras!['size'] as int) / (1024 * 1024)).toStringAsFixed(2)} MB',
+                                            ),
+                                          ]);
+                                        }
+                                        PopupDialog().showPopup(
+                                          context: context,
+                                          child: GradientCard(
+                                            child: SingleChildScrollView(
+                                              physics:
+                                                  const BouncingScrollPhysics(),
+                                              padding:
+                                                  const EdgeInsets.all(25.0),
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: details.keys.map((e) {
+                                                  return SelectableText.rich(
+                                                    TextSpan(
+                                                      children: <TextSpan>[
+                                                        TextSpan(
+                                                          text:
+                                                              '${e[0].toUpperCase()}${e.substring(1)}: '
+                                                                  .replaceAll(
+                                                            '_',
+                                                            ' ',
+                                                          ),
+                                                          style: TextStyle(
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                            color: Theme.of(
+                                                              context,
+                                                            )
+                                                                .textTheme
+                                                                .bodyLarge!
+                                                                .color,
+                                                          ),
+                                                        ),
+                                                        TextSpan(
+                                                          text: details[e]
+                                                              .toString(),
+                                                          style:
+                                                              const TextStyle(
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .normal,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    showCursor: true,
+                                                    cursorColor: Colors.black,
+                                                    cursorRadius:
+                                                        const Radius.circular(
+                                                      5,
+                                                    ),
+                                                  );
+                                                }).toList(),
+                                              ),
+                                            ),
                                           ),
-                                          child: Icon(
-                                            volumeValue == 0
-                                                ? Icons.volume_off_rounded
-                                                : volumeValue > 0.6
-                                                    ? Icons.volume_up_rounded
-                                                    : Icons.volume_down_rounded,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ],
+                                        );
+                                      },
+                                      icon: const Icon(Icons.info_rounded),
+                                      color: Theme.of(context).iconTheme.color,
                                     ),
                                   ),
                                 ),
-                              );
-                            },
-                          ),
-                          builder: (
-                            BuildContext context,
-                            bool value,
-                            Widget? child,
-                          ) {
-                            return Visibility(
-                              visible: value,
-                              child: child!,
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  ValueListenableBuilder(
-                    valueListenable: tapped,
-                    child: GestureDetector(
-                      onTap: () {
-                        tapped.value = false;
-                      },
-                      child: Card(
-                        color: Colors.black26,
-                        elevation: 0.0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15.0),
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: RadialGradient(
-                              colors: [
-                                Colors.black.withOpacity(0.4),
-                                Colors.black.withOpacity(0.7),
+                                const Spacer(),
+                                Align(
+                                  alignment: Alignment.bottomRight,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(10.0),
+                                    child: IconButton(
+                                      tooltip: AppLocalizations.of(context)!
+                                          .addToPlaylist,
+                                      onPressed: () {
+                                        AddToPlaylist().addToPlaylist(
+                                          context,
+                                          widget.mediaItem,
+                                        );
+                                      },
+                                      icon: const Icon(
+                                        Icons.playlist_add_rounded,
+                                      ),
+                                      color: Theme.of(context).iconTheme.color,
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
-                          child: Column(
-                            children: [
-                              Align(
-                                alignment: Alignment.topRight,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(10.0),
-                                  child: IconButton(
-                                    tooltip:
-                                        AppLocalizations.of(context)!.songInfo,
-                                    onPressed: () {
-                                      final Map details =
-                                          MediaItemConverter.mediaItemToMap(
-                                        widget.mediaItem,
-                                      );
-                                      details['duration'] =
-                                          '${int.parse(details["duration"].toString()) ~/ 60}:${int.parse(details["duration"].toString()) % 60}';
-                                      // style: Theme.of(context).textTheme.caption,
-                                      if (widget.mediaItem.extras?['size'] !=
-                                          null) {
-                                        details.addEntries([
-                                          MapEntry(
-                                            'date_modified',
-                                            DateTime.fromMillisecondsSinceEpoch(
-                                              int.parse(
-                                                    widget
-                                                        .mediaItem
-                                                        .extras![
-                                                            'date_modified']
-                                                        .toString(),
-                                                  ) *
-                                                  1000,
-                                            ).toString().split('.').first,
-                                          ),
-                                          MapEntry(
-                                            'size',
-                                            '${((widget.mediaItem.extras!['size'] as int) / (1024 * 1024)).toStringAsFixed(2)} MB',
-                                          ),
-                                        ]);
-                                      }
-                                      PopupDialog().showPopup(
-                                        context: context,
-                                        child: GradientCard(
-                                          child: SingleChildScrollView(
-                                            physics:
-                                                const BouncingScrollPhysics(),
-                                            padding: const EdgeInsets.all(25.0),
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: details.keys.map((e) {
-                                                return SelectableText.rich(
-                                                  TextSpan(
-                                                    children: <TextSpan>[
-                                                      TextSpan(
-                                                        text:
-                                                            '${e[0].toUpperCase()}${e.substring(1)}: '
-                                                                .replaceAll(
-                                                          '_',
-                                                          ' ',
-                                                        ),
-                                                        style: TextStyle(
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                          color:
-                                                              Theme.of(context)
-                                                                  .textTheme
-                                                                  .bodyText1!
-                                                                  .color,
-                                                        ),
-                                                      ),
-                                                      TextSpan(
-                                                        text: details[e]
-                                                            .toString(),
-                                                        style: const TextStyle(
-                                                          fontWeight:
-                                                              FontWeight.normal,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  showCursor: true,
-                                                  cursorColor: Colors.black,
-                                                  cursorRadius:
-                                                      const Radius.circular(5),
-                                                );
-                                              }).toList(),
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    icon: const Icon(Icons.info_rounded),
-                                    color: Theme.of(context).iconTheme.color,
-                                  ),
-                                ),
-                              ),
-                              const Spacer(),
-                              Align(
-                                alignment: Alignment.bottomRight,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(10.0),
-                                  child: IconButton(
-                                    tooltip: AppLocalizations.of(context)!
-                                        .addToPlaylist,
-                                    onPressed: () {
-                                      AddToPlaylist().addToPlaylist(
-                                        context,
-                                        widget.mediaItem,
-                                      );
-                                    },
-                                    icon:
-                                        const Icon(Icons.playlist_add_rounded),
-                                    color: Theme.of(context).iconTheme.color,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
                         ),
                       ),
+                      builder: (context, bool value, Widget? child) {
+                        return AnimatedContainer(
+                          duration: const Duration(milliseconds: 250),
+                          clipBehavior: Clip.antiAlias,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                          child: Visibility(visible: value, child: child!),
+                        );
+                      },
                     ),
-                    builder: (context, bool value, Widget? child) {
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 250),
-                        clipBehavior: Clip.antiAlias,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10.0),
-                        ),
-                        child: Visibility(visible: value, child: child!),
-                      );
-                    },
-                  ),
-                ],
+                  ],
+                ),
               );
             },
           ),
@@ -1811,8 +1887,9 @@ class NameNControls extends StatelessWidget {
             : height > 500
                 ? height * 0.2
                 : height * 0.3);
-    final double nowplayingBoxHeight =
-        height > 500 ? height * 0.4 : height * 0.15;
+    final double nowplayingBoxHeight = min(70, height * 0.15);
+    // height > 500 ? height * 0.4 : height * 0.15;
+    // final double minNowplayingBoxHeight = height * 0.15;
     final bool useFullScreenGradient = Hive.box('settings')
         .get('useFullScreenGradient', defaultValue: false) as bool;
     final List<String> artists = mediaItem.artist.toString().split(', ');
@@ -1880,27 +1957,25 @@ class NameNControls extends StatelessWidget {
                         ),
                       ),
                     if (mediaItem.artist != null)
-                      ...artists
-                          .map(
-                            (String artist) => PopupMenuItem<String>(
-                              value: artist,
-                              child: SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.person_rounded,
-                                    ),
-                                    const SizedBox(width: 10.0),
-                                    Text(
-                                      '${AppLocalizations.of(context)!.viewArtist} ($artist)',
-                                    ),
-                                  ],
+                      ...artists.map(
+                        (String artist) => PopupMenuItem<String>(
+                          value: artist,
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.person_rounded,
                                 ),
-                              ),
+                                const SizedBox(width: 10.0),
+                                Text(
+                                  '${AppLocalizations.of(context)!.viewArtist} ($artist)',
+                                ),
+                              ],
                             ),
-                          )
-                          .toList()
+                          ),
+                        ),
+                      )
                   ],
                   child: Center(
                     child: Padding(
@@ -1936,8 +2011,9 @@ class NameNControls extends StatelessWidget {
 
                           /// Subtitle container
                           AnimatedText(
-                            text:
-                                '${mediaItem.artist ?? "Unknown"} • ${mediaItem.album ?? "Unknown"}',
+                            text: (mediaItem.album ?? '').isEmpty
+                                ? '${(mediaItem.artist ?? "").isEmpty ? "Unknown" : mediaItem.artist}'
+                                : '${(mediaItem.artist ?? "").isEmpty ? "Unknown" : mediaItem.artist} • ${mediaItem.album}',
                             pauseAfterRound: const Duration(seconds: 3),
                             showFadingOnlyWhenScrolling: false,
                             fadingEdgeEndFraction: 0.1,

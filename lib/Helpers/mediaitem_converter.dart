@@ -18,6 +18,7 @@
  */
 
 import 'package:audio_service/audio_service.dart';
+import 'package:blackhole/Helpers/image_resolution_modifier.dart';
 
 // ignore: avoid_classes_with_only_static_members
 class MediaItemConverter {
@@ -50,6 +51,7 @@ class MediaItemConverter {
     Map song, {
     bool addedByAutoplay = false,
     bool autoplay = true,
+    String? playlistBox,
   }) {
     return MediaItem(
       id: song['id'].toString(),
@@ -57,17 +59,16 @@ class MediaItemConverter {
       artist: song['artist'].toString(),
       duration: Duration(
         seconds: int.parse(
-          (song['duration'] == null || song['duration'] == 'null')
+          (song['duration'] == null ||
+                  song['duration'] == 'null' ||
+                  song['duration'] == '')
               ? '180'
               : song['duration'].toString(),
         ),
       ),
       title: song['title'].toString(),
       artUri: Uri.parse(
-        song['image']
-            .toString()
-            .replaceAll('50x50', '500x500')
-            .replaceAll('150x150', '500x500'),
+        getImageUrl(song['image'].toString()),
       ),
       genre: song['language'].toString(),
       extras: {
@@ -83,9 +84,10 @@ class MediaItemConverter {
         'album_id': song['album_id'],
         'subtitle': song['subtitle'],
         'perma_url': song['perma_url'],
+        'expire_at': song['expire_at'],
         'addedByAutoplay': addedByAutoplay,
         'autoplay': autoplay,
-        'expire_at': song['expire_at'],
+        'playlistBox': playlistBox,
       },
     );
   }
@@ -97,7 +99,9 @@ class MediaItemConverter {
       artist: song['artist'].toString(),
       duration: Duration(
         seconds: int.parse(
-          (song['duration'] == null || song['duration'] == 'null')
+          (song['duration'] == null ||
+                  song['duration'] == 'null' ||
+                  song['duration'] == '')
               ? '180'
               : song['duration'].toString(),
         ),

@@ -27,13 +27,15 @@ import 'package:all_in_one_music_player/CustomWidgets/miniplayer.dart';
 import 'package:all_in_one_music_player/CustomWidgets/playlist_popupmenu.dart';
 import 'package:all_in_one_music_player/CustomWidgets/snackbar.dart';
 import 'package:all_in_one_music_player/CustomWidgets/song_tile_trailing_menu.dart';
+import 'package:all_in_one_music_player/Helpers/extensions.dart';
 import 'package:all_in_one_music_player/Services/player_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:html_unescape/html_unescape_small.dart';
 import 'package:logging/logging.dart';
 import 'package:share_plus/share_plus.dart';
+
+import '../../Helpers/image_resolution_modifier.dart';
 
 class SongsListPage extends StatefulWidget {
   final Map listItem;
@@ -52,7 +54,6 @@ class _SongsListPageState extends State<SongsListPage> {
   bool loading = false;
   List songList = [];
   bool fetched = false;
-  HtmlUnescape unescape = HtmlUnescape();
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -199,7 +200,7 @@ class _SongsListPageState extends State<SongsListPage> {
         loading = false;
       });
       Logger.root.severe(
-        'Error in song_list with type ${widget.listItem["type"].toString()}: $e',
+        'Error in song_list with type ${widget.listItem["type"]}: $e',
       );
     }
   }
@@ -240,9 +241,8 @@ class _SongsListPageState extends State<SongsListPage> {
                               widget.listItem['title']?.toString() ?? 'Songs',
                         ),
                       ],
-                      title: unescape.convert(
-                        widget.listItem['title']?.toString() ?? 'Songs',
-                      ),
+                      title: widget.listItem['title']?.toString().unescape() ??
+                          'Songs',
                       subtitle: '${songList.length} Songs',
                       secondarySubtitle:
                           widget.listItem['subTitle']?.toString() ??
@@ -259,17 +259,8 @@ class _SongsListPageState extends State<SongsListPage> {
                         shuffle: true,
                       ),
                       placeholderImage: 'assets/album.png',
-                      imageUrl: widget.listItem['image']
-                          ?.toString()
-                          .replaceAll('http:', 'https:')
-                          .replaceAll(
-                            '50x50',
-                            '500x500',
-                          )
-                          .replaceAll(
-                            '150x150',
-                            '500x500',
-                          ),
+                      imageUrl:
+                          getImageUrl(widget.listItem['image']?.toString()),
                       sliverList: SliverList(
                         delegate: SliverChildListDelegate([
                           if (songList.isNotEmpty)
@@ -310,6 +301,7 @@ class _SongsListPageState extends State<SongsListPage> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                               leading: Card(
+                                margin: EdgeInsets.zero,
                                 elevation: 8,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(7.0),
@@ -357,7 +349,7 @@ class _SongsListPageState extends State<SongsListPage> {
                                 );
                               },
                             );
-                          }).toList()
+                          })
                         ]),
                       ),
                     ),
