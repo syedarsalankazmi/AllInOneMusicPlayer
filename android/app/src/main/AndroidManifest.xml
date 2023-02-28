@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.shadow.blackhole">
+    package="com.verox.allinonemusicplayer">
    <application
-        android:label="BlackHole"
+        android:label="All in One Music Player"
         android:requestLegacyExternalStorage="true"
         android:icon="@mipmap/ic_launcher">
         <activity

@@ -1,20 +1,20 @@
 /*
- *  This file is part of BlackHole (https://github.com/Sangwan5688/BlackHole).
+ *  This file is part of AllInOneMusicPlayer (https://github.com/syedarsalankazmi/AllInOneMusicPlayer).
  * 
- * BlackHole is free software: you can redistribute it and/or modify
+ * AllInOneMusicPlayer is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * BlackHole is distributed in the hope that it will be useful,
+ * AllInOneMusicPlayer is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with BlackHole.  If not, see <http://www.gnu.org/licenses/>.
+ * along with AllInOneMusicPlayer.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright (c) 2021-2022, Ankit Sangwan
+ * Copyright (c) 2021-2022, Syed Arsalan Kazmi
  */
 
 import 'package:flutter/material.dart';
@@ -22,13 +22,13 @@ import 'package:hive/hive.dart';
 
 class MyTheme with ChangeNotifier {
   bool _isDark =
-      Hive.box('settings').get('darkMode', defaultValue: true) as bool;
+      Hive.box('settings').get('darkMode', defaultValue: false) as bool;
 
   bool _useSystemTheme =
       Hive.box('settings').get('useSystemTheme', defaultValue: false) as bool;
 
-  String accentColor =
-      Hive.box('settings').get('themeColor', defaultValue: 'Teal') as String;
+  String accentColor = Hive.box('settings')
+      .get('themeColor', defaultValue: 'Deep Purple') as String;
   String canvasColor =
       Hive.box('settings').get('canvasColor', defaultValue: 'Grey') as String;
   String cardColor =
@@ -39,7 +39,7 @@ class MyTheme with ChangeNotifier {
   int bottomGrad =
       Hive.box('settings').get('bottomGrad', defaultValue: 3) as int;
 
-  int colorHue = Hive.box('settings').get('colorHue', defaultValue: 400) as int;
+  int colorHue = Hive.box('settings').get('colorHue', defaultValue: 200) as int;
   List<Color?>? playGradientColor;
 
   List<List<Color>> get backOpt => _backOpt;
@@ -135,12 +135,13 @@ class MyTheme with ChangeNotifier {
 
   void refresh() {
     final Box settingsBox = Hive.box('settings');
-    _isDark = settingsBox.get('darkMode', defaultValue: true) as bool;
+    _isDark = settingsBox.get('darkMode', defaultValue: false) as bool;
 
     _useSystemTheme =
         settingsBox.get('useSystemTheme', defaultValue: false) as bool;
 
-    accentColor = settingsBox.get('themeColor', defaultValue: 'Teal') as String;
+    accentColor =
+        settingsBox.get('themeColor', defaultValue: 'Deep Purple') as String;
     canvasColor =
         settingsBox.get('canvasColor', defaultValue: 'Grey') as String;
     cardColor = settingsBox.get('cardColor', defaultValue: 'Grey900') as String;
@@ -223,7 +224,9 @@ class MyTheme with ChangeNotifier {
         return Colors.white;
 
       default:
-        return _isDark ? Colors.tealAccent[400]! : Colors.lightBlueAccent[400]!;
+        return _isDark
+            ? Colors.deepPurpleAccent[200]!
+            : Colors.lightBlueAccent[400]!;
     }
   }
 
@@ -311,7 +314,9 @@ class MyTheme with ChangeNotifier {
         return Colors.white;
 
       default:
-        return _isDark ? Colors.tealAccent[400]! : Colors.lightBlueAccent[400]!;
+        return _isDark
+            ? Colors.deepPurpleAccent[200]!
+            : Colors.lightBlueAccent[400]!;
     }
   }
 

@@ -1,37 +1,37 @@
 /*
- *  This file is part of BlackHole (https://github.com/Sangwan5688/BlackHole).
+ *  This file is part of AllInOneMusicPlayer (https://github.com/syedarsalankazmi/AllInOneMusicPlayer).
  * 
- * BlackHole is free software: you can redistribute it and/or modify
+ * AllInOneMusicPlayer is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * BlackHole is distributed in the hope that it will be useful,
+ * AllInOneMusicPlayer is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with BlackHole.  If not, see <http://www.gnu.org/licenses/>.
+ * along with AllInOneMusicPlayer.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright (c) 2021-2022, Ankit Sangwan
+ * Copyright (c) 2021-2022, Syed Arsalan Kazmi
  */
 
 import 'dart:io';
 
-import 'package:blackhole/APIs/api.dart';
-import 'package:blackhole/CustomWidgets/collage.dart';
-import 'package:blackhole/CustomWidgets/horizontal_albumlist.dart';
-import 'package:blackhole/CustomWidgets/like_button.dart';
-import 'package:blackhole/CustomWidgets/on_hover.dart';
-import 'package:blackhole/CustomWidgets/snackbar.dart';
-import 'package:blackhole/CustomWidgets/song_tile_trailing_menu.dart';
-import 'package:blackhole/Helpers/extensions.dart';
-import 'package:blackhole/Helpers/format.dart';
-import 'package:blackhole/Screens/Common/song_list.dart';
-import 'package:blackhole/Screens/Library/liked.dart';
-import 'package:blackhole/Screens/Search/artists.dart';
-import 'package:blackhole/Services/player_service.dart';
+import 'package:all_in_one_music_player/APIs/api.dart';
+import 'package:all_in_one_music_player/CustomWidgets/collage.dart';
+import 'package:all_in_one_music_player/CustomWidgets/horizontal_albumlist.dart';
+import 'package:all_in_one_music_player/CustomWidgets/like_button.dart';
+import 'package:all_in_one_music_player/CustomWidgets/on_hover.dart';
+import 'package:all_in_one_music_player/CustomWidgets/snackbar.dart';
+import 'package:all_in_one_music_player/CustomWidgets/song_tile_trailing_menu.dart';
+import 'package:all_in_one_music_player/Helpers/extensions.dart';
+import 'package:all_in_one_music_player/Helpers/format.dart';
+import 'package:all_in_one_music_player/Screens/Common/song_list.dart';
+import 'package:all_in_one_music_player/Screens/Library/liked.dart';
+import 'package:all_in_one_music_player/Screens/Search/artists.dart';
+import 'package:all_in_one_music_player/Services/player_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -39,7 +39,7 @@ import 'package:hive/hive.dart';
 
 bool fetched = false;
 List preferredLanguage = Hive.box('settings')
-    .get('preferredLanguage', defaultValue: ['Hindi']) as List;
+    .get('preferredLanguage', defaultValue: ['English']) as List;
 List likedRadio =
     Hive.box('settings').get('likedRadio', defaultValue: []) as List;
 Map data = Hive.box('cache').get('homepage', defaultValue: {}) as Map;

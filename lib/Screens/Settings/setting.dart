@@ -1,50 +1,46 @@
 /*
- *  This file is part of BlackHole (https://github.com/Sangwan5688/BlackHole).
+ *  This file is part of AllInOneMusicPlayer (https://github.com/syedarsalankazmi/AllInOneMusicPlayer).
  * 
- * BlackHole is free software: you can redistribute it and/or modify
+ * AllInOneMusicPlayer is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * BlackHole is distributed in the hope that it will be useful,
+ * AllInOneMusicPlayer is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with BlackHole.  If not, see <http://www.gnu.org/licenses/>.
+ * along with AllInOneMusicPlayer.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright (c) 2021-2022, Ankit Sangwan
+ * Copyright (c) 2021-2022, Syed Arsalan Kazmi
  */
 
 import 'dart:io';
 
-import 'package:blackhole/CustomWidgets/copy_clipboard.dart';
-import 'package:blackhole/CustomWidgets/gradient_containers.dart';
-import 'package:blackhole/CustomWidgets/popup.dart';
-import 'package:blackhole/CustomWidgets/snackbar.dart';
-import 'package:blackhole/CustomWidgets/textinput_dialog.dart';
-import 'package:blackhole/Helpers/backup_restore.dart';
-import 'package:blackhole/Helpers/config.dart';
-import 'package:blackhole/Helpers/countrycodes.dart';
-import 'package:blackhole/Helpers/picker.dart';
-import 'package:blackhole/Helpers/supabase.dart';
-import 'package:blackhole/Screens/Home/saavn.dart' as home_screen;
-import 'package:blackhole/Screens/Settings/player_gradient.dart';
-import 'package:blackhole/Screens/Top Charts/top.dart' as top_screen;
-import 'package:blackhole/Services/ext_storage_provider.dart';
-import 'package:blackhole/main.dart';
-import 'package:device_info_plus/device_info_plus.dart';
+import 'package:all_in_one_music_player/CustomWidgets/gradient_containers.dart';
+import 'package:all_in_one_music_player/CustomWidgets/popup.dart';
+import 'package:all_in_one_music_player/CustomWidgets/snackbar.dart';
+import 'package:all_in_one_music_player/CustomWidgets/textinput_dialog.dart';
+import 'package:all_in_one_music_player/Helpers/backup_restore.dart';
+import 'package:all_in_one_music_player/Helpers/config.dart';
+import 'package:all_in_one_music_player/Helpers/countrycodes.dart';
+import 'package:all_in_one_music_player/Helpers/picker.dart';
+import 'package:all_in_one_music_player/Screens/Home/saavn.dart' as home_screen;
+import 'package:all_in_one_music_player/Screens/Settings/player_gradient.dart';
+import 'package:all_in_one_music_player/Screens/Top Charts/top.dart'
+    as top_screen;
+import 'package:all_in_one_music_player/Services/ext_storage_provider.dart';
+import 'package:all_in_one_music_player/main.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:get_it/get_it.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class SettingPage extends StatefulWidget {
   final Function? callback;
@@ -61,7 +57,7 @@ class _SettingPageState extends State<SettingPage> {
       .get('downloadPath', defaultValue: '/storage/emulated/0/Music') as String;
   String autoBackPath = Hive.box('settings').get(
     'autoBackPath',
-    defaultValue: '/storage/emulated/0/BlackHole/Backups',
+    defaultValue: '/storage/emulated/0/AllInOneMusicPlayer/Backups',
   ) as String;
   final ValueNotifier<bool> includeOrExclude = ValueNotifier<bool>(
     Hive.box('settings').get('includeOrExclude', defaultValue: false) as bool,
@@ -89,11 +85,11 @@ class _SettingPageState extends State<SettingPage> {
   Map userThemes =
       Hive.box('settings').get('userThemes', defaultValue: {}) as Map;
   String region =
-      Hive.box('settings').get('region', defaultValue: 'India') as String;
+      Hive.box('settings').get('region', defaultValue: 'Global') as String;
   bool useProxy =
       Hive.box('settings').get('useProxy', defaultValue: false) as bool;
-  String themeColor =
-      Hive.box('settings').get('themeColor', defaultValue: 'Teal') as String;
+  String themeColor = Hive.box('settings')
+      .get('themeColor', defaultValue: 'Deep Purple') as String;
   int colorHue = Hive.box('settings').get('colorHue', defaultValue: 400) as int;
   int downFilename =
       Hive.box('settings').get('downFilename', defaultValue: 0) as int;
@@ -120,7 +116,7 @@ class _SettingPageState extends State<SettingPage> {
     defaultValue: ['Like', 'Previous', 'Play/Pause', 'Next', 'Download'],
   ) as List;
   List preferredLanguage = Hive.box('settings')
-      .get('preferredLanguage', defaultValue: ['Hindi'])?.toList() as List;
+      .get('preferredLanguage', defaultValue: ['English'])?.toList() as List;
   List preferredMiniButtons = Hive.box('settings').get(
     'preferredMiniButtons',
     defaultValue: ['Like', 'Play/Pause', 'Next'],
@@ -248,7 +244,7 @@ class _SettingPageState extends State<SettingPage> {
                                 .darkMode,
                           ),
                           keyName: 'darkMode',
-                          defaultValue: true,
+                          defaultValue: false,
                           onChanged: (bool val, Box box) {
                             box.put(
                               'useSystemTheme',
@@ -1707,7 +1703,7 @@ class _SettingPageState extends State<SettingPage> {
                             15,
                             15,
                             15,
-                            0,
+                            15,
                           ),
                           child: Text(
                             AppLocalizations.of(
@@ -2860,23 +2856,23 @@ class _SettingPageState extends State<SettingPage> {
                         //   keyName: 'stopServiceOnPause',
                         //   defaultValue: true,
                         // ),
-                        BoxSwitchTile(
-                          title: Text(
-                            AppLocalizations.of(
-                              context,
-                            )!
-                                .checkUpdate,
-                          ),
-                          subtitle: Text(
-                            AppLocalizations.of(
-                              context,
-                            )!
-                                .checkUpdateSub,
-                          ),
-                          keyName: 'checkUpdate',
-                          isThreeLine: true,
-                          defaultValue: false,
-                        ),
+                        // BoxSwitchTile(
+                        //   title: Text(
+                        //     AppLocalizations.of(
+                        //       context,
+                        //     )!
+                        //         .checkUpdate,
+                        //   ),
+                        //   subtitle: Text(
+                        //     AppLocalizations.of(
+                        //       context,
+                        //     )!
+                        //         .checkUpdateSub,
+                        //   ),
+                        //   keyName: 'checkUpdate',
+                        //   isThreeLine: true,
+                        //   defaultValue: false,
+                        // ),
                         BoxSwitchTile(
                           title: Text(
                             AppLocalizations.of(
@@ -3412,11 +3408,11 @@ class _SettingPageState extends State<SettingPage> {
                                   : Colors.grey[700],
                             ),
                             onPressed: () async {
-                              autoBackPath =
-                                  await ExtStorageProvider.getExtStorage(
-                                        dirName: 'BlackHole/Backups',
-                                      ) ??
-                                      '/storage/emulated/0/BlackHole/Backups';
+                              autoBackPath = await ExtStorageProvider
+                                      .getExtStorage(
+                                    dirName: 'AllInOneMusicPlayer/Backups',
+                                  ) ??
+                                  '/storage/emulated/0/AllInOneMusicPlayer/Backups';
                               Hive.box('settings')
                                   .put('autoBackPath', autoBackPath);
                               setState(
@@ -3460,502 +3456,502 @@ class _SettingPageState extends State<SettingPage> {
                     ),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    10.0,
-                    10.0,
-                    10.0,
-                    10.0,
-                  ),
-                  child: GradientCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(
-                            15,
-                            15,
-                            15,
-                            0,
-                          ),
-                          child: Text(
-                            AppLocalizations.of(
-                              context,
-                            )!
-                                .about,
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.secondary,
-                            ),
-                          ),
-                        ),
-                        ListTile(
-                          title: Text(
-                            AppLocalizations.of(
-                              context,
-                            )!
-                                .version,
-                          ),
-                          subtitle: Text(
-                            AppLocalizations.of(
-                              context,
-                            )!
-                                .versionSub,
-                          ),
-                          onTap: () {
-                            ShowSnackBar().showSnackBar(
-                              context,
-                              AppLocalizations.of(
-                                context,
-                              )!
-                                  .checkingUpdate,
-                              noAction: true,
-                            );
+                // Padding(
+                //   padding: const EdgeInsets.fromLTRB(
+                //     10.0,
+                //     10.0,
+                //     10.0,
+                //     10.0,
+                //   ),
+                //   child: GradientCard(
+                //     child: Column(
+                //       crossAxisAlignment: CrossAxisAlignment.start,
+                //       children: [
+                //         Padding(
+                //           padding: const EdgeInsets.fromLTRB(
+                //             15,
+                //             15,
+                //             15,
+                //             0,
+                //           ),
+                //           child: Text(
+                //             AppLocalizations.of(
+                //               context,
+                //             )!
+                //                 .about,
+                //             style: TextStyle(
+                //               fontSize: 22,
+                //               fontWeight: FontWeight.bold,
+                //               color: Theme.of(context).colorScheme.secondary,
+                //             ),
+                //           ),
+                //         ),
+                //         ListTile(
+                //           title: Text(
+                //             AppLocalizations.of(
+                //               context,
+                //             )!
+                //                 .version,
+                //           ),
+                //           subtitle: Text(
+                //             AppLocalizations.of(
+                //               context,
+                //             )!
+                //                 .versionSub,
+                //           ),
+                //           onTap: () {
+                //             ShowSnackBar().showSnackBar(
+                //               context,
+                //               AppLocalizations.of(
+                //                 context,
+                //               )!
+                //                   .checkingUpdate,
+                //               noAction: true,
+                //             );
 
-                            SupaBase().getUpdate().then(
-                              (Map value) async {
-                                if (compareVersion(
-                                  value['LatestVersion'].toString(),
-                                  appVersion!,
-                                )) {
-                                  List? abis = await Hive.box('settings')
-                                      .get('supportedAbis') as List?;
+                //             SupaBase().getUpdate().then(
+                //               (Map value) async {
+                //                 if (compareVersion(
+                //                   value['LatestVersion'].toString(),
+                //                   appVersion!,
+                //                 )) {
+                //                   List? abis = await Hive.box('settings')
+                //                       .get('supportedAbis') as List?;
 
-                                  if (abis == null) {
-                                    final DeviceInfoPlugin deviceInfo =
-                                        DeviceInfoPlugin();
-                                    final AndroidDeviceInfo androidDeviceInfo =
-                                        await deviceInfo.androidInfo;
-                                    abis = androidDeviceInfo.supportedAbis;
-                                    await Hive.box('settings')
-                                        .put('supportedAbis', abis);
-                                  }
-                                  ShowSnackBar().showSnackBar(
-                                    context,
-                                    AppLocalizations.of(context)!
-                                        .updateAvailable,
-                                    duration: const Duration(seconds: 15),
-                                    action: SnackBarAction(
-                                      textColor: Theme.of(context)
-                                          .colorScheme
-                                          .secondary,
-                                      label:
-                                          AppLocalizations.of(context)!.update,
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                        launchUrl(
-                                          Uri.parse(
-                                            value['LatestUrl'].toString(),
-                                          ),
-                                        );
-                                        // if (abis!.contains('arm64-v8a')) {
-                                        //   launchUrl(
-                                        //     Uri.parse(
-                                        //       value['arm64-v8a'] as String,
-                                        //     ),
-                                        //     mode:
-                                        //         LaunchMode.externalApplication,
-                                        //   );
-                                        // } else {
-                                        //   if (abis.contains('armeabi-v7a')) {
-                                        //     launchUrl(
-                                        //       Uri.parse(
-                                        //         value['armeabi-v7a'] as String,
-                                        //       ),
-                                        //       mode: LaunchMode
-                                        //           .externalApplication,
-                                        //     );
-                                        //   } else {
-                                        //     launchUrl(
-                                        //       Uri.parse(
-                                        //         value['universal'] as String,
-                                        //       ),
-                                        //       mode: LaunchMode
-                                        //           .externalApplication,
-                                        //     );
-                                        //   }
-                                        // }
-                                      },
-                                    ),
-                                  );
-                                } else {
-                                  ShowSnackBar().showSnackBar(
-                                    context,
-                                    AppLocalizations.of(
-                                      context,
-                                    )!
-                                        .latest,
-                                  );
-                                }
-                              },
-                            );
-                          },
-                          trailing: Text(
-                            'v$appVersion',
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                          dense: true,
-                        ),
-                        ListTile(
-                          title: Text(
-                            AppLocalizations.of(
-                              context,
-                            )!
-                                .shareApp,
-                          ),
-                          subtitle: Text(
-                            AppLocalizations.of(
-                              context,
-                            )!
-                                .shareAppSub,
-                          ),
-                          onTap: () {
-                            Share.share(
-                              '${AppLocalizations.of(
-                                context,
-                              )!.shareAppText}: https://github.com/Sangwan5688/BlackHole',
-                            );
-                          },
-                          dense: true,
-                        ),
-                        ListTile(
-                          title: Text(
-                            AppLocalizations.of(
-                              context,
-                            )!
-                                .likedWork,
-                          ),
-                          subtitle: Text(
-                            AppLocalizations.of(
-                              context,
-                            )!
-                                .buyCoffee,
-                          ),
-                          dense: true,
-                          onTap: () {
-                            launchUrl(
-                              Uri.parse(
-                                'https://www.buymeacoffee.com/ankitsangwan',
-                              ),
-                              mode: LaunchMode.externalApplication,
-                            );
-                          },
-                        ),
-                        ListTile(
-                          title: Text(
-                            AppLocalizations.of(
-                              context,
-                            )!
-                                .donateGpay,
-                          ),
-                          subtitle: Text(
-                            AppLocalizations.of(
-                              context,
-                            )!
-                                .donateGpaySub,
-                          ),
-                          dense: true,
-                          isThreeLine: true,
-                          onTap: () {
-                            const String upiUrl =
-                                'upi://pay?pa=ankit.sangwan.5688@oksbi&pn=BlackHole';
-                            launchUrl(
-                              Uri.parse(upiUrl),
-                              mode: LaunchMode.externalApplication,
-                            );
-                          },
-                          onLongPress: () {
-                            copyToClipboard(
-                              context: context,
-                              text: 'ankit.sangwan.5688@oksbi',
-                              displayText: AppLocalizations.of(
-                                context,
-                              )!
-                                  .upiCopied,
-                            );
-                          },
-                          trailing: TextButton(
-                            style: TextButton.styleFrom(
-                              foregroundColor: Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.white
-                                  : Colors.grey[700],
-                            ),
-                            onPressed: () {
-                              copyToClipboard(
-                                context: context,
-                                text: 'ankit.sangwan.5688@oksbi',
-                                displayText: AppLocalizations.of(
-                                  context,
-                                )!
-                                    .upiCopied,
-                              );
-                            },
-                            child: Text(
-                              AppLocalizations.of(
-                                context,
-                              )!
-                                  .copy,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ),
-                        ListTile(
-                          title: Text(
-                            AppLocalizations.of(
-                              context,
-                            )!
-                                .contactUs,
-                          ),
-                          subtitle: Text(
-                            AppLocalizations.of(
-                              context,
-                            )!
-                                .contactUsSub,
-                          ),
-                          dense: true,
-                          onTap: () {
-                            showModalBottomSheet(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return SizedBox(
-                                  height: 100,
-                                  child: GradientContainer(
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
-                                      children: [
-                                        Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            IconButton(
-                                              icon: const Icon(
-                                                MdiIcons.gmail,
-                                              ),
-                                              iconSize: 40,
-                                              tooltip: AppLocalizations.of(
-                                                context,
-                                              )!
-                                                  .gmail,
-                                              onPressed: () {
-                                                Navigator.pop(context);
-                                                launchUrl(
-                                                  Uri.parse(
-                                                    'https://mail.google.com/mail/?extsrc=mailto&url=mailto%3A%3Fto%3Dblackholeyoucantescape%40gmail.com%26subject%3DRegarding%2520Mobile%2520App',
-                                                  ),
-                                                  mode: LaunchMode
-                                                      .externalApplication,
-                                                );
-                                              },
-                                            ),
-                                            Text(
-                                              AppLocalizations.of(
-                                                context,
-                                              )!
-                                                  .gmail,
-                                            ),
-                                          ],
-                                        ),
-                                        Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            IconButton(
-                                              icon: const Icon(
-                                                MdiIcons.telegram,
-                                              ),
-                                              iconSize: 40,
-                                              tooltip: AppLocalizations.of(
-                                                context,
-                                              )!
-                                                  .tg,
-                                              onPressed: () {
-                                                Navigator.pop(context);
-                                                launchUrl(
-                                                  Uri.parse(
-                                                    'https://t.me/joinchat/fHDC1AWnOhw0ZmI9',
-                                                  ),
-                                                  mode: LaunchMode
-                                                      .externalApplication,
-                                                );
-                                              },
-                                            ),
-                                            Text(
-                                              AppLocalizations.of(
-                                                context,
-                                              )!
-                                                  .tg,
-                                            ),
-                                          ],
-                                        ),
-                                        Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            IconButton(
-                                              icon: const Icon(
-                                                MdiIcons.instagram,
-                                              ),
-                                              iconSize: 40,
-                                              tooltip: AppLocalizations.of(
-                                                context,
-                                              )!
-                                                  .insta,
-                                              onPressed: () {
-                                                Navigator.pop(context);
-                                                launchUrl(
-                                                  Uri.parse(
-                                                    'https://instagram.com/sangwan5688',
-                                                  ),
-                                                  mode: LaunchMode
-                                                      .externalApplication,
-                                                );
-                                              },
-                                            ),
-                                            Text(
-                                              AppLocalizations.of(
-                                                context,
-                                              )!
-                                                  .insta,
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                        ),
-                        ListTile(
-                          title: Text(
-                            AppLocalizations.of(
-                              context,
-                            )!
-                                .joinTg,
-                          ),
-                          subtitle: Text(
-                            AppLocalizations.of(
-                              context,
-                            )!
-                                .joinTgSub,
-                          ),
-                          onTap: () {
-                            showModalBottomSheet(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return SizedBox(
-                                  height: 100,
-                                  child: GradientContainer(
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
-                                      children: [
-                                        Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            IconButton(
-                                              icon: const Icon(
-                                                MdiIcons.telegram,
-                                              ),
-                                              iconSize: 40,
-                                              tooltip: AppLocalizations.of(
-                                                context,
-                                              )!
-                                                  .tgGp,
-                                              onPressed: () {
-                                                Navigator.pop(context);
-                                                launchUrl(
-                                                  Uri.parse(
-                                                    'https://t.me/joinchat/fHDC1AWnOhw0ZmI9',
-                                                  ),
-                                                  mode: LaunchMode
-                                                      .externalApplication,
-                                                );
-                                              },
-                                            ),
-                                            Text(
-                                              AppLocalizations.of(
-                                                context,
-                                              )!
-                                                  .tgGp,
-                                            ),
-                                          ],
-                                        ),
-                                        Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            IconButton(
-                                              icon: const Icon(
-                                                MdiIcons.telegram,
-                                              ),
-                                              iconSize: 40,
-                                              tooltip: AppLocalizations.of(
-                                                context,
-                                              )!
-                                                  .tgCh,
-                                              onPressed: () {
-                                                Navigator.pop(context);
-                                                launchUrl(
-                                                  Uri.parse(
-                                                    'https://t.me/blackhole_official',
-                                                  ),
-                                                  mode: LaunchMode
-                                                      .externalApplication,
-                                                );
-                                              },
-                                            ),
-                                            Text(
-                                              AppLocalizations.of(
-                                                context,
-                                              )!
-                                                  .tgCh,
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                          dense: true,
-                        ),
-                        ListTile(
-                          title: Text(
-                            AppLocalizations.of(
-                              context,
-                            )!
-                                .moreInfo,
-                          ),
-                          dense: true,
-                          onTap: () {
-                            Navigator.pushNamed(context, '/about');
-                          },
-                        ),
-                      ],
-                    ),
+                //                   if (abis == null) {
+                //                     final DeviceInfoPlugin deviceInfo =
+                //                         DeviceInfoPlugin();
+                //                     final AndroidDeviceInfo androidDeviceInfo =
+                //                         await deviceInfo.androidInfo;
+                //                     abis = androidDeviceInfo.supportedAbis;
+                //                     await Hive.box('settings')
+                //                         .put('supportedAbis', abis);
+                //                   }
+                //                   ShowSnackBar().showSnackBar(
+                //                     context,
+                //                     AppLocalizations.of(context)!
+                //                         .updateAvailable,
+                //                     duration: const Duration(seconds: 15),
+                //                     action: SnackBarAction(
+                //                       textColor: Theme.of(context)
+                //                           .colorScheme
+                //                           .secondary,
+                //                       label:
+                //                           AppLocalizations.of(context)!.update,
+                //                       onPressed: () {
+                //                         Navigator.pop(context);
+                //                         launchUrl(
+                //                           Uri.parse(
+                //                             value['LatestUrl'].toString(),
+                //                           ),
+                //                         );
+                //                         // if (abis!.contains('arm64-v8a')) {
+                //                         //   launchUrl(
+                //                         //     Uri.parse(
+                //                         //       value['arm64-v8a'] as String,
+                //                         //     ),
+                //                         //     mode:
+                //                         //         LaunchMode.externalApplication,
+                //                         //   );
+                //                         // } else {
+                //                         //   if (abis.contains('armeabi-v7a')) {
+                //                         //     launchUrl(
+                //                         //       Uri.parse(
+                //                         //         value['armeabi-v7a'] as String,
+                //                         //       ),
+                //                         //       mode: LaunchMode
+                //                         //           .externalApplication,
+                //                         //     );
+                //                         //   } else {
+                //                         //     launchUrl(
+                //                         //       Uri.parse(
+                //                         //         value['universal'] as String,
+                //                         //       ),
+                //                         //       mode: LaunchMode
+                //                         //           .externalApplication,
+                //                         //     );
+                //                         //   }
+                //                         // }
+                //                       },
+                //                     ),
+                //                   );
+                //                 } else {
+                //                   ShowSnackBar().showSnackBar(
+                //                     context,
+                //                     AppLocalizations.of(
+                //                       context,
+                //                     )!
+                //                         .latest,
+                //                   );
+                //                 }
+                //               },
+                //             );
+                //           },
+                //           trailing: Text(
+                //             'v$appVersion',
+                //             style: const TextStyle(fontSize: 12),
+                //           ),
+                //           dense: true,
+                //         ),
+                //         ListTile(
+                //           title: Text(
+                //             AppLocalizations.of(
+                //               context,
+                //             )!
+                //                 .shareApp,
+                //           ),
+                //           subtitle: Text(
+                //             AppLocalizations.of(
+                //               context,
+                //             )!
+                //                 .shareAppSub,
+                //           ),
+                //           onTap: () {
+                //             Share.share(
+                //               '${AppLocalizations.of(
+                //                 context,
+                //               )!.shareAppText}: https://github.com/Sangwan5688/BlackHole',
+                //             );
+                //           },
+                //           dense: true,
+                //         ),
+                //         ListTile(
+                //           title: Text(
+                //             AppLocalizations.of(
+                //               context,
+                //             )!
+                //                 .likedWork,
+                //           ),
+                //           subtitle: Text(
+                //             AppLocalizations.of(
+                //               context,
+                //             )!
+                //                 .buyCoffee,
+                //           ),
+                //           dense: true,
+                //           onTap: () {
+                //             launchUrl(
+                //               Uri.parse(
+                //                 'https://www.buymeacoffee.com/ankitsangwan',
+                //               ),
+                //               mode: LaunchMode.externalApplication,
+                //             );
+                //           },
+                //         ),
+                //         ListTile(
+                //           title: Text(
+                //             AppLocalizations.of(
+                //               context,
+                //             )!
+                //                 .donateGpay,
+                //           ),
+                //           subtitle: Text(
+                //             AppLocalizations.of(
+                //               context,
+                //             )!
+                //                 .donateGpaySub,
+                //           ),
+                //           dense: true,
+                //           isThreeLine: true,
+                //           onTap: () {
+                //             const String upiUrl =
+                //                 'upi://pay?pa=ankit.sangwan.5688@oksbi&pn=BlackHole';
+                //             launchUrl(
+                //               Uri.parse(upiUrl),
+                //               mode: LaunchMode.externalApplication,
+                //             );
+                //           },
+                //           onLongPress: () {
+                //             copyToClipboard(
+                //               context: context,
+                //               text: 'ankit.sangwan.5688@oksbi',
+                //               displayText: AppLocalizations.of(
+                //                 context,
+                //               )!
+                //                   .upiCopied,
+                //             );
+                //           },
+                //           trailing: TextButton(
+                //             style: TextButton.styleFrom(
+                //               foregroundColor: Theme.of(context).brightness ==
+                //                       Brightness.dark
+                //                   ? Colors.white
+                //                   : Colors.grey[700],
+                //             ),
+                //             onPressed: () {
+                //               copyToClipboard(
+                //                 context: context,
+                //                 text: 'ankit.sangwan.5688@oksbi',
+                //                 displayText: AppLocalizations.of(
+                //                   context,
+                //                 )!
+                //                     .upiCopied,
+                //               );
+                //             },
+                //             child: Text(
+                //               AppLocalizations.of(
+                //                 context,
+                //               )!
+                //                   .copy,
+                //               style: const TextStyle(
+                //                 fontWeight: FontWeight.w500,
+                //               ),
+                //             ),
+                //           ),
+                //         ),
+                //         ListTile(
+                //           title: Text(
+                //             AppLocalizations.of(
+                //               context,
+                //             )!
+                //                 .contactUs,
+                //           ),
+                //           subtitle: Text(
+                //             AppLocalizations.of(
+                //               context,
+                //             )!
+                //                 .contactUsSub,
+                //           ),
+                //           dense: true,
+                //           onTap: () {
+                //             showModalBottomSheet(
+                //               context: context,
+                //               builder: (BuildContext context) {
+                //                 return SizedBox(
+                //                   height: 100,
+                //                   child: GradientContainer(
+                //                     child: Row(
+                //                       mainAxisAlignment:
+                //                           MainAxisAlignment.spaceEvenly,
+                //                       children: [
+                //                         Column(
+                //                           mainAxisSize: MainAxisSize.min,
+                //                           children: [
+                //                             IconButton(
+                //                               icon: const Icon(
+                //                                 MdiIcons.gmail,
+                //                               ),
+                //                               iconSize: 40,
+                //                               tooltip: AppLocalizations.of(
+                //                                 context,
+                //                               )!
+                //                                   .gmail,
+                //                               onPressed: () {
+                //                                 Navigator.pop(context);
+                //                                 launchUrl(
+                //                                   Uri.parse(
+                //                                     'https://mail.google.com/mail/?extsrc=mailto&url=mailto%3A%3Fto%3Dblackholeyoucantescape%40gmail.com%26subject%3DRegarding%2520Mobile%2520App',
+                //                                   ),
+                //                                   mode: LaunchMode
+                //                                       .externalApplication,
+                //                                 );
+                //                               },
+                //                             ),
+                //                             Text(
+                //                               AppLocalizations.of(
+                //                                 context,
+                //                               )!
+                //                                   .gmail,
+                //                             ),
+                //                           ],
+                //                         ),
+                //                         Column(
+                //                           mainAxisSize: MainAxisSize.min,
+                //                           children: [
+                //                             IconButton(
+                //                               icon: const Icon(
+                //                                 MdiIcons.telegram,
+                //                               ),
+                //                               iconSize: 40,
+                //                               tooltip: AppLocalizations.of(
+                //                                 context,
+                //                               )!
+                //                                   .tg,
+                //                               onPressed: () {
+                //                                 Navigator.pop(context);
+                //                                 launchUrl(
+                //                                   Uri.parse(
+                //                                     'https://t.me/joinchat/fHDC1AWnOhw0ZmI9',
+                //                                   ),
+                //                                   mode: LaunchMode
+                //                                       .externalApplication,
+                //                                 );
+                //                               },
+                //                             ),
+                //                             Text(
+                //                               AppLocalizations.of(
+                //                                 context,
+                //                               )!
+                //                                   .tg,
+                //                             ),
+                //                           ],
+                //                         ),
+                //                         Column(
+                //                           mainAxisSize: MainAxisSize.min,
+                //                           children: [
+                //                             IconButton(
+                //                               icon: const Icon(
+                //                                 MdiIcons.instagram,
+                //                               ),
+                //                               iconSize: 40,
+                //                               tooltip: AppLocalizations.of(
+                //                                 context,
+                //                               )!
+                //                                   .insta,
+                //                               onPressed: () {
+                //                                 Navigator.pop(context);
+                //                                 launchUrl(
+                //                                   Uri.parse(
+                //                                     'https://instagram.com/sangwan5688',
+                //                                   ),
+                //                                   mode: LaunchMode
+                //                                       .externalApplication,
+                //                                 );
+                //                               },
+                //                             ),
+                //                             Text(
+                //                               AppLocalizations.of(
+                //                                 context,
+                //                               )!
+                //                                   .insta,
+                //                             ),
+                //                           ],
+                //                         ),
+                //                       ],
+                //                     ),
+                //                   ),
+                //                 );
+                //               },
+                //             );
+                //           },
+                //         ),
+                //         ListTile(
+                //           title: Text(
+                //             AppLocalizations.of(
+                //               context,
+                //             )!
+                //                 .joinTg,
+                //           ),
+                //           subtitle: Text(
+                //             AppLocalizations.of(
+                //               context,
+                //             )!
+                //                 .joinTgSub,
+                //           ),
+                //           onTap: () {
+                //             showModalBottomSheet(
+                //               context: context,
+                //               builder: (BuildContext context) {
+                //                 return SizedBox(
+                //                   height: 100,
+                //                   child: GradientContainer(
+                //                     child: Row(
+                //                       mainAxisAlignment:
+                //                           MainAxisAlignment.spaceEvenly,
+                //                       children: [
+                //                         Column(
+                //                           mainAxisSize: MainAxisSize.min,
+                //                           children: [
+                //                             IconButton(
+                //                               icon: const Icon(
+                //                                 MdiIcons.telegram,
+                //                               ),
+                //                               iconSize: 40,
+                //                               tooltip: AppLocalizations.of(
+                //                                 context,
+                //                               )!
+                //                                   .tgGp,
+                //                               onPressed: () {
+                //                                 Navigator.pop(context);
+                //                                 launchUrl(
+                //                                   Uri.parse(
+                //                                     'https://t.me/joinchat/fHDC1AWnOhw0ZmI9',
+                //                                   ),
+                //                                   mode: LaunchMode
+                //                                       .externalApplication,
+                //                                 );
+                //                               },
+                //                             ),
+                //                             Text(
+                //                               AppLocalizations.of(
+                //                                 context,
+                //                               )!
+                //                                   .tgGp,
+                //                             ),
+                //                           ],
+                //                         ),
+                //                         Column(
+                //                           mainAxisSize: MainAxisSize.min,
+                //                           children: [
+                //                             IconButton(
+                //                               icon: const Icon(
+                //                                 MdiIcons.telegram,
+                //                               ),
+                //                               iconSize: 40,
+                //                               tooltip: AppLocalizations.of(
+                //                                 context,
+                //                               )!
+                //                                   .tgCh,
+                //                               onPressed: () {
+                //                                 Navigator.pop(context);
+                //                                 launchUrl(
+                //                                   Uri.parse(
+                //                                     'https://t.me/blackhole_official',
+                //                                   ),
+                //                                   mode: LaunchMode
+                //                                       .externalApplication,
+                //                                 );
+                //                               },
+                //                             ),
+                //                             Text(
+                //                               AppLocalizations.of(
+                //                                 context,
+                //                               )!
+                //                                   .tgCh,
+                //                             ),
+                //                           ],
+                //                         ),
+                //                       ],
+                //                     ),
+                //                   ),
+                //                 );
+                //               },
+                //             );
+                //           },
+                //           dense: true,
+                //         ),
+                //         ListTile(
+                //           title: Text(
+                //             AppLocalizations.of(
+                //               context,
+                //             )!
+                //                 .moreInfo,
+                //           ),
+                //           dense: true,
+                //           onTap: () {
+                //             Navigator.pushNamed(context, '/about');
+                //           },
+                //         ),
+                //       ],
+                //     ),
+                //   ),
+                // ),
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    0,
+                    25,
+                    0,
+                    0,
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    5,
-                    30,
-                    5,
-                    20,
-                  ),
-                  child: Center(
-                    child: Text(
-                      AppLocalizations.of(
-                        context,
-                      )!
-                          .madeBy,
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ),
+                  // child: Center(
+                  //   child: Text(
+                  //     AppLocalizations.of(
+                  //       context,
+                  //     )!
+                  //         .madeBy,
+                  //     style: const TextStyle(fontSize: 12),
+                  //   ),
+                  // ),
                 ),
               ],
             ),
@@ -4022,7 +4018,7 @@ class BoxSwitchTile extends StatelessWidget {
 class SpotifyCountry {
   Future<String> changeCountry({required BuildContext context}) async {
     String region =
-        Hive.box('settings').get('region', defaultValue: 'India') as String;
+        Hive.box('settings').get('region', defaultValue: 'Global') as String;
     if (!ConstantCodes.localChartCodes.containsKey(region)) {
       region = 'India';
     }

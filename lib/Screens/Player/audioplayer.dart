@@ -1,20 +1,20 @@
 /*
- *  This file is part of BlackHole (https://github.com/Sangwan5688/BlackHole).
+ *  This file is part of AllInOneMusicPlayer (https://github.com/syedarsalankazmi/AllInOneMusicPlayer).
  * 
- * BlackHole is free software: you can redistribute it and/or modify
+ * AllInOneMusicPlayer is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * BlackHole is distributed in the hope that it will be useful,
+ * AllInOneMusicPlayer is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with BlackHole.  If not, see <http://www.gnu.org/licenses/>.
+ * along with AllInOneMusicPlayer.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright (c) 2021-2022, Ankit Sangwan
+ * Copyright (c) 2021-2022, Syed Arsalan Kazmi
  */
 
 import 'dart:async';
@@ -23,24 +23,24 @@ import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:audio_service/audio_service.dart';
-import 'package:blackhole/CustomWidgets/add_playlist.dart';
-import 'package:blackhole/CustomWidgets/animated_text.dart';
-import 'package:blackhole/CustomWidgets/copy_clipboard.dart';
-import 'package:blackhole/CustomWidgets/download_button.dart';
-import 'package:blackhole/CustomWidgets/empty_screen.dart';
-import 'package:blackhole/CustomWidgets/equalizer.dart';
-import 'package:blackhole/CustomWidgets/gradient_containers.dart';
-import 'package:blackhole/CustomWidgets/like_button.dart';
-import 'package:blackhole/CustomWidgets/popup.dart';
-import 'package:blackhole/CustomWidgets/seek_bar.dart';
-import 'package:blackhole/CustomWidgets/snackbar.dart';
-import 'package:blackhole/CustomWidgets/textinput_dialog.dart';
-import 'package:blackhole/Helpers/config.dart';
-import 'package:blackhole/Helpers/dominant_color.dart';
-import 'package:blackhole/Helpers/lyrics.dart';
-import 'package:blackhole/Helpers/mediaitem_converter.dart';
-import 'package:blackhole/Screens/Common/song_list.dart';
-import 'package:blackhole/Screens/Search/albums.dart';
+import 'package:all_in_one_music_player/CustomWidgets/add_playlist.dart';
+import 'package:all_in_one_music_player/CustomWidgets/animated_text.dart';
+import 'package:all_in_one_music_player/CustomWidgets/copy_clipboard.dart';
+import 'package:all_in_one_music_player/CustomWidgets/download_button.dart';
+import 'package:all_in_one_music_player/CustomWidgets/empty_screen.dart';
+import 'package:all_in_one_music_player/CustomWidgets/equalizer.dart';
+import 'package:all_in_one_music_player/CustomWidgets/gradient_containers.dart';
+import 'package:all_in_one_music_player/CustomWidgets/like_button.dart';
+import 'package:all_in_one_music_player/CustomWidgets/popup.dart';
+import 'package:all_in_one_music_player/CustomWidgets/seek_bar.dart';
+import 'package:all_in_one_music_player/CustomWidgets/snackbar.dart';
+import 'package:all_in_one_music_player/CustomWidgets/textinput_dialog.dart';
+import 'package:all_in_one_music_player/Helpers/config.dart';
+import 'package:all_in_one_music_player/Helpers/dominant_color.dart';
+import 'package:all_in_one_music_player/Helpers/lyrics.dart';
+import 'package:all_in_one_music_player/Helpers/mediaitem_converter.dart';
+import 'package:all_in_one_music_player/Screens/Common/song_list.dart';
+import 'package:all_in_one_music_player/Screens/Search/albums.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flip_card/flip_card.dart';
 import 'package:flutter/cupertino.dart';
@@ -513,8 +513,10 @@ class _PlayScreenState extends State<PlayScreen> {
                                   value: 5,
                                   child: Row(
                                     children: [
-                                      const Icon(
+                                      Icon(
                                         Icons.album_rounded,
+                                        color:
+                                            Theme.of(context).iconTheme.color,
                                       ),
                                       const SizedBox(width: 10.0),
                                       Text(
@@ -1866,8 +1868,9 @@ class NameNControls extends StatelessWidget {
                         value: '0',
                         child: Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.album_rounded,
+                              color: Theme.of(context).iconTheme.color,
                             ),
                             const SizedBox(width: 10.0),
                             Text(

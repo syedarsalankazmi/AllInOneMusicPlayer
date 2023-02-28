@@ -1,43 +1,42 @@
 /*
- *  This file is part of BlackHole (https://github.com/Sangwan5688/BlackHole).
+ *  This file is part of AllInOneMusicPlayer (https://github.com/syedarsalankazmi/AllInOneMusicPlayer).
  * 
- * BlackHole is free software: you can redistribute it and/or modify
+ * AllInOneMusicPlayer is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * BlackHole is distributed in the hope that it will be useful,
+ * AllInOneMusicPlayer is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with BlackHole.  If not, see <http://www.gnu.org/licenses/>.
+ * along with AllInOneMusicPlayer.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright (c) 2021-2022, Ankit Sangwan
+ * Copyright (c) 2021-2022, Syed Arsalan Kazmi
  */
 
 import 'dart:async';
 import 'dart:io';
 
+import 'package:all_in_one_music_player/Helpers/config.dart';
+import 'package:all_in_one_music_player/Helpers/countrycodes.dart';
+import 'package:all_in_one_music_player/Helpers/handle_native.dart';
+import 'package:all_in_one_music_player/Helpers/logging.dart';
+import 'package:all_in_one_music_player/Helpers/route_handler.dart';
+import 'package:all_in_one_music_player/Screens/Home/home.dart';
+import 'package:all_in_one_music_player/Screens/Library/downloads.dart';
+import 'package:all_in_one_music_player/Screens/Library/nowplaying.dart';
+import 'package:all_in_one_music_player/Screens/Library/playlists.dart';
+import 'package:all_in_one_music_player/Screens/Library/recent.dart';
+import 'package:all_in_one_music_player/Screens/Login/auth.dart';
+import 'package:all_in_one_music_player/Screens/Login/pref.dart';
+import 'package:all_in_one_music_player/Screens/Player/audioplayer.dart';
+import 'package:all_in_one_music_player/Screens/Settings/setting.dart';
+import 'package:all_in_one_music_player/Services/audio_service.dart';
+import 'package:all_in_one_music_player/theme/app_theme.dart';
 import 'package:audio_service/audio_service.dart';
-import 'package:blackhole/Helpers/config.dart';
-import 'package:blackhole/Helpers/countrycodes.dart';
-import 'package:blackhole/Helpers/handle_native.dart';
-import 'package:blackhole/Helpers/logging.dart';
-import 'package:blackhole/Helpers/route_handler.dart';
-import 'package:blackhole/Screens/About/about.dart';
-import 'package:blackhole/Screens/Home/home.dart';
-import 'package:blackhole/Screens/Library/downloads.dart';
-import 'package:blackhole/Screens/Library/nowplaying.dart';
-import 'package:blackhole/Screens/Library/playlists.dart';
-import 'package:blackhole/Screens/Library/recent.dart';
-import 'package:blackhole/Screens/Login/auth.dart';
-import 'package:blackhole/Screens/Login/pref.dart';
-import 'package:blackhole/Screens/Player/audioplayer.dart';
-import 'package:blackhole/Screens/Settings/setting.dart';
-import 'package:blackhole/Services/audio_service.dart';
-import 'package:blackhole/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
@@ -53,7 +52,7 @@ Future<void> main() async {
   Paint.enableDithering = true;
 
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-    await Hive.initFlutter('BlackHole');
+    await Hive.initFlutter('AllInOneMusicPlayer');
   } else {
     await Hive.initFlutter();
   }
@@ -114,8 +113,8 @@ Future<void> openHiveBox(String boxName, {bool limit = false}) async {
     File dbFile = File('$dirPath/$boxName.hive');
     File lockFile = File('$dirPath/$boxName.lock');
     if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-      dbFile = File('$dirPath/BlackHole/$boxName.hive');
-      lockFile = File('$dirPath/BlackHole/$boxName.lock');
+      dbFile = File('$dirPath/AllInOneMusicPlayer/$boxName.hive');
+      lockFile = File('$dirPath/AllInOneMusicPlayer/$boxName.lock');
     }
     await dbFile.delete();
     await lockFile.delete();
@@ -217,7 +216,7 @@ class _MyAppState extends State<MyApp> {
     ]);
 
     return MaterialApp(
-      title: 'BlackHole',
+      title: 'All In One MusicPlayer',
       restorationScopeId: 'blackhole',
       debugShowCheckedModeBanner: false,
       themeMode: AppTheme.themeMode,
@@ -241,7 +240,7 @@ class _MyAppState extends State<MyApp> {
         '/': (context) => initialFuntion(),
         '/pref': (context) => const PrefScreen(),
         '/setting': (context) => const SettingPage(),
-        '/about': (context) => AboutScreen(),
+        // '/about': (context) => AboutScreen(),
         '/playlists': (context) => PlaylistScreen(),
         '/nowplaying': (context) => NowPlaying(),
         '/recent': (context) => RecentlyPlayed(),

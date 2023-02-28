@@ -1,26 +1,26 @@
 /*
- *  This file is part of BlackHole (https://github.com/Sangwan5688/BlackHole).
+ *  This file is part of AllInOneMusicPlayer (https://github.com/syedarsalankazmi/AllInOneMusicPlayer).
  * 
- * BlackHole is free software: you can redistribute it and/or modify
+ * AllInOneMusicPlayer is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * BlackHole is distributed in the hope that it will be useful,
+ * AllInOneMusicPlayer is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with BlackHole.  If not, see <http://www.gnu.org/licenses/>.
+ * along with AllInOneMusicPlayer.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright (c) 2021-2022, Ankit Sangwan
+ * Copyright (c) 2021-2022, Syed Arsalan Kazmi
  */
 
-import 'package:blackhole/CustomWidgets/gradient_containers.dart';
-import 'package:blackhole/Helpers/backup_restore.dart';
-import 'package:blackhole/Helpers/config.dart';
-import 'package:blackhole/Helpers/supabase.dart';
+import 'package:all_in_one_music_player/CustomWidgets/gradient_containers.dart';
+import 'package:all_in_one_music_player/Helpers/backup_restore.dart';
+import 'package:all_in_one_music_player/Helpers/config.dart';
+import 'package:all_in_one_music_player/Helpers/supabase.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:get_it/get_it.dart';
@@ -45,19 +45,16 @@ class _AuthScreenState extends State<AuthScreen> {
   Future _addUserData(String name) async {
     await Hive.box('settings').put('name', name.trim());
     final DateTime now = DateTime.now();
-    final List createDate = now
-        .toUtc()
-        .add(const Duration(hours: 5, minutes: 30))
-        .toString()
-        .split('.')
-      ..removeLast()
-      ..join('.');
+    final List createDate =
+        now.toUtc().add(const Duration(hours: 5)).toString().split('.')
+          ..removeLast()
+          ..join('.');
 
     final String userId = uuid.v1();
     await SupaBase().createUser({
       'id': userId,
       'name': name,
-      'accountCreatedOn': '${createDate[0]} IST',
+      'accountCreatedOn': '${createDate[0]} PKT',
       'timeZone':
           "Zone: ${now.timeZoneName} Offset: ${now.timeZoneOffset.toString().replaceAll('.000000', '')}",
     });
@@ -79,7 +76,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   height: MediaQuery.of(context).size.width,
                   child: const Image(
                     image: AssetImage(
-                      'assets/icon-white-trans.png',
+                      'assets/icon/icon.png',
                     ),
                   ),
                 ),
@@ -131,7 +128,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               children: [
                                 RichText(
                                   text: TextSpan(
-                                    text: 'Black\nHole\n',
+                                    text: 'All In\nOne\n',
                                     style: TextStyle(
                                       height: 0.97,
                                       fontSize: 80,
@@ -142,11 +139,11 @@ class _AuthScreenState extends State<AuthScreen> {
                                     ),
                                     children: <TextSpan>[
                                       const TextSpan(
-                                        text: 'Music',
+                                        text: 'Music\nPlayer',
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 80,
-                                          color: Colors.white,
+                                          color: Colors.black87,
                                         ),
                                       ),
                                       TextSpan(
@@ -179,7 +176,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                   height: 57.0,
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(10.0),
-                                    color: Colors.grey[900],
+                                    color: Colors.white,
                                     boxShadow: const [
                                       BoxShadow(
                                         color: Colors.black26,
@@ -263,7 +260,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                         AppLocalizations.of(context)!
                                             .getStarted,
                                         style: const TextStyle(
-                                          color: Colors.black,
+                                          color: Colors.white,
                                           fontWeight: FontWeight.bold,
                                           fontSize: 20.0,
                                         ),
@@ -289,7 +286,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                         AppLocalizations.of(context)!
                                             .disclaimerText,
                                         style: TextStyle(
-                                          color: Colors.grey.withOpacity(0.7),
+                                          color: Colors.grey,
                                         ),
                                       ),
                                     ],

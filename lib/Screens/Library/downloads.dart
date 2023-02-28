@@ -1,36 +1,36 @@
 /*
- *  This file is part of BlackHole (https://github.com/Sangwan5688/BlackHole).
+ *  This file is part of AllInOneMusicPlayer (https://github.com/syedarsalankazmi/AllInOneMusicPlayer).
  * 
- * BlackHole is free software: you can redistribute it and/or modify
+ * AllInOneMusicPlayer is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * BlackHole is distributed in the hope that it will be useful,
+ * AllInOneMusicPlayer is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with BlackHole.  If not, see <http://www.gnu.org/licenses/>.
+ * along with AllInOneMusicPlayer.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright (c) 2021-2022, Ankit Sangwan
+ * Copyright (c) 2021-2022, Syed Arsalan Kazmi
  */
 
 import 'dart:io';
 
 import 'package:audiotagger/audiotagger.dart';
 import 'package:audiotagger/models/tag.dart';
-import 'package:blackhole/CustomWidgets/custom_physics.dart';
-import 'package:blackhole/CustomWidgets/data_search.dart';
-import 'package:blackhole/CustomWidgets/empty_screen.dart';
-import 'package:blackhole/CustomWidgets/gradient_containers.dart';
-import 'package:blackhole/CustomWidgets/miniplayer.dart';
-import 'package:blackhole/CustomWidgets/playlist_head.dart';
-import 'package:blackhole/CustomWidgets/snackbar.dart';
-import 'package:blackhole/Helpers/picker.dart';
-import 'package:blackhole/Screens/Library/liked.dart';
-import 'package:blackhole/Services/player_service.dart';
+import 'package:all_in_one_music_player/CustomWidgets/custom_physics.dart';
+import 'package:all_in_one_music_player/CustomWidgets/data_search.dart';
+import 'package:all_in_one_music_player/CustomWidgets/empty_screen.dart';
+import 'package:all_in_one_music_player/CustomWidgets/gradient_containers.dart';
+import 'package:all_in_one_music_player/CustomWidgets/miniplayer.dart';
+import 'package:all_in_one_music_player/CustomWidgets/playlist_head.dart';
+import 'package:all_in_one_music_player/CustomWidgets/snackbar.dart';
+import 'package:all_in_one_music_player/Helpers/picker.dart';
+import 'package:all_in_one_music_player/Screens/Library/liked.dart';
+import 'package:all_in_one_music_player/Services/player_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
